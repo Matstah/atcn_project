@@ -1,0 +1,27 @@
+# Python byte code
+*.pyc
+
+# Emacs
+*~
+
+# Compiled JSON
+*.json
+!*p4app*.json
+
+*.pcap
+
+# Build folders
+build*/
+log*/
+pcap*/
+
+*.db
+
+*.p4i
+*.p4rt
+
+#latex
+*.aux
+*.bbl
+*.log
+*.out
