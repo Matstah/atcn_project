@@ -1,0 +1,35 @@
+Proposal #4: Advanced stateful firewall
+Responsible: Roland Meier
+
+Firewalls are an essential component to control access to a network. While firewalls provided rather
+basic functionality in the past (such as allowing or blocking access depending on the endpoint or
+application), today's "next‑generation" firewalls provide many additional features (such as serving as a
+VPN endpoint or performing deep packet inspection (DPI)). However, such tasks are usually implemented
+in the control plane and massively degrade the throughput of a firewall such that even high‑end
+professional firewalls act as a bottleneck for the network bandwidth.
+
+The scope of this project is to implement an advanced firewall in P4. Starring with a basic stateful firewall
+as discussed in the lecture (one that only allows established connections from inside), the students are
+expected to implement additional features such as:
+‑ Allow fine‑grained policies per device class (e.g. a Webcam can only access few servers, a host can
+access all destinations)
+‑ Port knocking (a simple way to allow remote access like in a VPN)
+‑ Block hosts that are performing well‑known attacks (such as SYN‑flooding)
+‑ Detect DDoS attacks where the attackers or the victims are in the internal network
+‑ Detect (and prevent) address spoofing
+‑ ... (the students are invited to come up with own ideas for additional functions)
+
+Objectives:
+The final result should support a subset of the above features (and features suggested by the students)
+and implement them in a resource‑efficient way (i.e. use as few registers as possible). Ideally, most of the
+computation is done in the data plane (potentially after implementing own externs for P4), however it is
+also possible to offload certain tasks to a controller.
+
+Tasks:
+‑ Implement a stateful firewall that only allows connections which are established from the
+internal network
+‑ Extend implementation to support basic white‑/ and blacklists (e.g., allow or block traffic
+depending on the IP, port, ...)
+‑ Implement a controller that can interact with the firewall configuration
+and enable the switch to send parts of the traffic to the controller (e.g. for DPI)
+‑ Extend implementation with features from above and with your own features
