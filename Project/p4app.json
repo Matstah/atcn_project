@@ -30,7 +30,7 @@
     "object_name": "P4Mininet"
   },
   "topology": {
-    "assignment_strategy": "l2",
+    "assignment_strategy": "mixed",
     "auto_arp_tables": false,
     "links": [
       ["he1", "fir"], ["he2", "fir"], ["he3", "fir"],
