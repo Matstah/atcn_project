@@ -9,7 +9,7 @@
   "enable_log": true,
   "exec_scripts": [
     {
-      "cmd": "python controller.py",
+      "cmd": "sudo python controller.py --sw s1 &",
       "reboot_run": true
     }
   ],
@@ -31,6 +31,7 @@
   },
   "topology": {
     "assignment_strategy": "l2",
+    "auto_arp_tables": false,
     "links": [["h1", "s1"], ["s1", "h2"]],
     "hosts": {
       "h1": {

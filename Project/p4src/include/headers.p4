@@ -3,6 +3,7 @@
 *************************************************************************/
 
 const bit<16> TYPE_IPV4 = 0x800;
+const bit<16> TYPE_BROADCAST = 0x1234;
 
 typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
@@ -51,8 +52,15 @@ header tcp_t{
     bit<16> urgentPtr;
 }
 
-struct metadata {
+struct learn_t {
 
+    bit<48> srcAddr;
+    bit<9>  ingress_port;
+
+}
+
+struct metadata {
+    learn_t learn;
 }
 
 struct headers {
