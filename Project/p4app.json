@@ -9,7 +9,7 @@
   "enable_log": true,
   "exec_scripts": [
     {
-      "cmd": "sudo python controller.py --sw s1 &",
+      "cmd": "sudo python controller.py --sw fir &",
       "reboot_run": true
     }
   ],
@@ -32,16 +32,29 @@
   "topology": {
     "assignment_strategy": "l2",
     "auto_arp_tables": false,
-    "links": [["h1", "s1"], ["s1", "h2"]],
+    "links": [
+      ["he1", "fir"], ["he2", "fir"], ["he3", "fir"],
+      ["hi1", "fir"], ["hi2", "fir"], ["hi3", "fir"],
+      ["ser", "fir"]
+    ],
     "hosts": {
-      "h1": {
+      "he1": {
       },
-      "h2": {
-
+      "he2": {
+      },
+      "he3": {
+      },
+      "ser": {
+      },
+      "hi1": {
+      },
+      "hi2": {
+      },
+      "hi3": {
       }
     },
     "switches": {
-      "s1": {
+      "fir": {
       }
     }
   }
