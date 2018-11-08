@@ -15,7 +15,6 @@ class L2Controller(object):
         self.topo = Topology(db="topology.db")
         self.sw_name = sw_name
         self.thrift_port = self.topo.get_thrift_port(sw_name)
-        self.cpu_port =  self.topo.get_cpu_port_index(self.sw_name)
         self.controller = SimpleSwitchAPI(self.thrift_port)
 
         self.init()
@@ -24,13 +23,6 @@ class L2Controller(object):
 
         self.controller.reset_state()
         self.add_boadcast_groups()
-        self.add_mirror()
-        #self.fill_table_test()
-
-    def add_mirror(self):
-
-        if self.cpu_port:
-            self.controller.mirroring_add(100, self.cpu_port)
 
     def add_boadcast_groups(self):
 
@@ -61,15 +53,7 @@ class L2Controller(object):
             mc_grp_id +=1
             rid +=1
 
-    def fill_table_test(self):
-        self.controller.table_add("dmac", "forward", ['00:00:0a:00:00:01'], ['1'])
-        self.controller.table_add("dmac", "forward", ['00:00:0a:00:00:02'], ['2'])
-        self.controller.table_add("dmac", "forward", ['00:00:0a:00:00:03'], ['3'])
-        self.controller.table_add("dmac", "forward", ['00:00:0a:00:00:04'], ['4'])
-
-
     def learn(self, learning_data):
-
         for mac_addr, ingress_port in  learning_data:
             print "mac: %012X ingress_port: %s " % (mac_addr, ingress_port)
             self.controller.table_add("smac", "NoAction", [str(mac_addr)])
@@ -110,19 +94,6 @@ class L2Controller(object):
             msg = sub.recv()
             self.recv_msg_digest(msg)
 
-    def recv_msg_cpu(self, pkt):
-
-        packet = Ether(str(pkt))
-
-        if packet.type == 0x1234:
-            cpu_header = CpuHeader(packet.payload)
-            self.learn([(cpu_header.macAddr, cpu_header.ingress_port)])
-
-    def run_cpu_port_loop(self):
-
-        cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
-        sniff(iface=cpu_port_intf, prn=self.recv_msg_cpu)
-
 class RoutingController(object):
 
     def __init__(self):
@@ -145,10 +116,10 @@ class RoutingController(object):
 
     def set_table_defaults(self):
         for controller in self.controllers.values():
-	        a = 1
+	        a = 1 # TODO:
 
     def main(self):
-        a = 1
+        a = 1 # TODO:
 
 if __name__ == "__main__":
     import argparse
