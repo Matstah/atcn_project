@@ -5,7 +5,6 @@ import sys
 import socket
 import random
 import struct
-from subprocess import Popen, PIPE
 import logging as log
 
 from p4utils.utils.topology import Topology
@@ -29,15 +28,6 @@ def get_if():
         exit(1)
     return iface
 
-def get_dst_mac(ip):
-    try:
-        pid = Popen(["arp", "-n", ip], stdout=PIPE)
-        s = pid.communicate()[0]
-        mac = re.search(r"(([a-f\d]{1,2}\:){5}[a-f\d]{1,2})", s).groups()[0]
-        return mac
-    except:
-        return None
-
 # resolves host to ipv4 and checks first if
 def get_host_ip(host):
     if not re.match(r'(\d{1,3}\.){3}\d{1,3}', host):
@@ -45,16 +35,33 @@ def get_host_ip(host):
     else:
         return socket.gethostbyname(host)
 
-def send(dst, packets):
-    log.debug('Sending {} packets to {}'.format(packets, dst))
-    addr = get_host_ip(dst)
-    iface = get_if()
-    log.info("sending on interface %s to %s" % (iface, str(addr)))
+# get mac address for ethernet header based on dst and an option
+def get_mac(host, option=None):
+    if option == 'broadcast':
+        return 'ff:ff:ff:ff:ff:ff'
+    else:
+        return topo.get_host_mac(host)
 
+def send(dst, packets, sleep):
+    log.debug('Sending {} packets to {}'.format(packets, dst))
+    ip_addr = get_host_ip(dst)
+    iface = get_if()
+
+    ether_src = get_if_hwaddr(iface)
+    log.debug("ether_src={}".format(ether_src))
+
+    ether_dst = get_mac(dst)
+    log.debug("ether_dst={}".format(ether_dst))
+
+    # info before actions
+    log.info("sending on interface %s to %s" % (iface, str(ip_addr)))
+
+    # the actual work
     for _ in range(packets):
-        pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
-        pkt = pkt / IP(dst=addr) / TCP(dport=80, sport=random.randint(49152,65535))
+        pkt = Ether(src=ether_src, dst=ether_dst)
+        pkt = pkt / IP(dst=ip_addr) / TCP(dport=80, sport=random.randint(49152,65535))
         sendp(pkt, iface=iface, verbose=False)
+        time.sleep(sleep)
 
 
 if __name__ == "__main__":
@@ -68,6 +75,7 @@ if __name__ == "__main__":
     # args for actual functionality
     parser.add_argument('-d', '--dst',     type=str, required=True, help='Destination NAME or IPv4')
     parser.add_argument('-p', '--packets', type=int, required=False, default=1, help='Number of packets')
+    parser.add_argument('--sleep', type=float, required=False, default=0.0, help='Sleep time between packets')
 
     # other args
     parser.add_argument('--debug', action='store_true', required=False, help='Activate debug messages')
@@ -92,5 +100,5 @@ if __name__ == "__main__":
         # load globals
         topo = Topology(db="/home/p4/atcn-project/Project/topology.db")
 
-        send(args.dst, args.packets)
+        send(args.dst, args.packets, args.sleep)
 # END MAIN
