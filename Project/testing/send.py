@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import argparse
 import sys
 import socket
@@ -29,14 +30,27 @@ def send(dst, packets):
 
     for _ in range(packets):
         pkt = Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
-        pkt = pkt / IP(dst=addr) / TCP(dport=7777, sport)
+        #pkt = pkt / IP(dst=addr) / TCP(dport=7777, sport)
 
 
 if __name__ == "__main__":
-    import argparse
     parser = argparse.ArgumentParser()
+
+    # args for local execution
+    parser.add_argument('--local', action='store_true', required=False, help='If script should run from local prompt')
+    parser.add_argument('--src', type=str, required=False, help='Source host in case of a local call')
+    parser.add_argument('--on_remote', action='store_true', required=False, help='Do not set this flag yourself!!')
+
+    # args for actual functionality
     parser.add_argument('-d', '--dst',     type=str, required=True, help='Destination name')
     parser.add_argument('-p', '--packets', type=int, required=True, help='Number of packets')
     args = parser.parse_args()
 
-    send(args.dst, args.packets)
+    if (args.local and not args.on_remote):
+        # call script on host with same params, plus on_remote flag to avoid loop
+        from subprocess import call
+        cmd = ["mx", args.src, 'python'] + sys.argv + ['--on_remote']
+        print("Run the following command:\n{}".format(cmd))
+        call(cmd)
+    else:
+        send(args.dst, args.packets)
