@@ -75,6 +75,7 @@ if __name__ == "__main__":
     # args for actual functionality
     parser.add_argument('-d', '--dst',     type=str, required=True, help='Destination NAME or IPv4')
     parser.add_argument('-p', '--packets', type=int, required=False, default=1, help='Number of packets')
+    #TODO parser.add_argument('--receive', action='store_true', required='False', help='Trigger receive terminals to open directly [only from local]')
     parser.add_argument('--sleep', type=float, required=False, default=0.0, help='Sleep time between packets')
 
     # other args
@@ -91,6 +92,10 @@ if __name__ == "__main__":
 
     # start sending from host or dispatch to host
     if (args.local and not args.on_remote):
+        # TODO: open receive terminals first
+        #if(args.receive):
+        #    os.system("xterm -e 'bash -c \"sudo apt-get update; exec bash\"'")
+
         # call script on host with same params, plus on_remote flag to avoid loop
         from subprocess import call
         cmd = ["mx", args.src, 'python'] + sys.argv + ['--on_remote']
