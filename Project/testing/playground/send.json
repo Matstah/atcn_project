@@ -1,0 +1,15 @@
+{
+  "topo": "/home/p4/atcn-project/Project/topology.db",
+  "packets": 1,
+  "sleep": 0,
+  
+  "ethernet": {
+    "enabled": true
+  },
+  "ip": {
+    "enabled": true
+  },
+  "tcp": {
+    "enabled": true
+  }
+}
