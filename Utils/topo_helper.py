@@ -154,24 +154,70 @@ class TopoHelper(object):
         print('done!')
 
 
-    def info(self):
-        for type in self.components.keys():
+    def subinfo(self, type, info_function, node, indent):
+        i = indent*INDENT
+        try:
+            print("{}{}: {}".format(i, type, info_function(node)))
+        except Exception as e:
+            pass
+            #print(e)
+            #print("{}{}: {}".format(i, type, 'None'))
+
+    # print information of general interest about the topology
+    def info(self, choice):
+        if choice == "all":
+            types = self.components.keys()
+        elif choice == "external":
+            types = ["external_hosts"]
+        elif choice == "internal":
+            types = ["internal_hosts", "servers"]
+        elif choice == "switches":
+            types = ["firewalls"]
+        else:
+            print("Choice not recognized")
+            return
+
+        for type in types:
             print(type.upper())
-            for node in self.components[type]:
+            for node in reversed(self.components[type]):
                 print("{}{}".format(INDENT, node))
-                try:
-                    print("{}{}IP: {}".format(INDENT, INDENT, self.topo.get_host_ip(node)))
-                except:
-                    print("{}{}IP: {}".format(INDENT, INDENT, 'None'))
+                self.subinfo('IP', self.topo.get_host_ip, node, 2)
+                self.subinfo('MAC', self.topo.get_host_mac, node, 2)
+                self.subinfo('thrift_port', self.topo.get_thrift_port, node, 2)
+                self.subinfo('interfaces', self.topo.get_interfaces_to_node, node, 2)
+                self.subinfo('connected hosts', self.topo.get_hosts_connected_to, node,2)
+
+    # print details for a single node
+    def details(self, node):
+        print("DETAILS of {}".format(node))
+        if node in self.topo.get_p4switches().keys():
+            #print('Is a P4 switch')
+            self.subinfo('thrift_port', self.topo.get_thrift_port, node, 1)
+            self.subinfo('connected hosts', self.topo.get_hosts_connected_to, node, 1)
+            self.subinfo('MAC', self.topo.get_host_mac, node, 1)
+        else:
+            #print('Is a host')
+            self.subinfo('IP', self.topo.get_host_ip, node, 1)
+            self.subinfo('MAC', self.topo.get_host_mac, node, 1)
+
+# TODO: add the following information
+# node_to_node_port_num(node1, node2): returns the port index of node1 facing node2. This index can be used to populate your forwarding table entries.
+# node_to_node_mac(node1, node2): returns the mac address of the interface from node1 that connects with node2. This can be used to get next hop destination mac addresses.
+# get_shortest_paths_between_nodes(node1, node2): returns a list of the shortest paths between two nodes. The list includes the src and the destination and multiple equal cost paths if found. For example, get_shortest_paths_between_nodes('s1', 's2') would return [('s1', 's4', 's2'), ('s1', 's5', 's2')] if two equal cost paths are found using s4 and s5 as next hops.
+# node_to_node_interface_ip(node1, node2): returns the IP address of the interface from node1 connecting with node2. Note that the ip address includes the prefix len at the end /x.
+# get_interfaces_to_node(sw_name): returns a dictionary of all the interfaces as keys and the node they connect to as value. For example {'s1-eth1': 'h1', 's1-eth2': 's2'}.
+# interface_to_port(node, intf_name): returns the interface index of intf_name for node.
 
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--topo', type=str, default='topology.db', help='Topology database file')
+    parser.add_argument('--topo', type=str, default='topology.db', help='Topology database file')
     parser.add_argument('-d', '--draw', action='store_true', required=False, help='Flag: draw topology')
     parser.add_argument('-i', '--info', action='store_true', required=False, help='Flag: get info of topo')
+    parser.add_argument('-t', '--type', type=str, default='all', help='With INFO: show only for one of [external, internal, switches]')
+    parser.add_argument('-n', '--node', type=str, required=False, help='With INFO: get detailed info for this node')
     args = parser.parse_args()
 
     if not (args.draw or args.info):
@@ -179,7 +225,9 @@ if __name__ == "__main__":
 
     helper = TopoHelper(args.topo)
     if args.info:
-        helper.info()
+        if args.node:
+            helper.details(args.node)
+        else:
+            helper.info(args.type)
     if args.draw:
         helper.draw()
-    print("DONE!")
