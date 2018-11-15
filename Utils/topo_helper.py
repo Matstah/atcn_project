@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import re
 
 # CONSTANTS
+INDENT = '   '
 HORIZONTAL_SEPARATION = 1
 VERTICAL_SEPARATION = 1
 STANDARD_NODE_SIZE = 650
@@ -153,14 +154,32 @@ class TopoHelper(object):
         print('done!')
 
 
+    def info(self):
+        for type in self.components.keys():
+            print(type.upper())
+            for node in self.components[type]:
+                print("{}{}".format(INDENT, node))
+                try:
+                    print("{}{}IP: {}".format(INDENT, INDENT, self.topo.get_host_ip(node)))
+                except:
+                    print("{}{}IP: {}".format(INDENT, INDENT, 'None'))
+
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--topo', type=str, default='topology.db', help='Topology database file')
     parser.add_argument('-d', '--draw', action='store_true', required=False, help='Flag: draw topology')
+    parser.add_argument('-i', '--info', action='store_true', required=False, help='Flag: get info of topo')
     args = parser.parse_args()
 
-    if args.draw:
-        helper = TopoHelper(args.topo).draw()
-    else:
+    if not (args.draw or args.info):
         print('Nothing to do! Choose an option! [help with -h]')
+
+    helper = TopoHelper(args.topo)
+    if args.info:
+        helper.info()
+    if args.draw:
+        helper.draw()
+    print("DONE!")
