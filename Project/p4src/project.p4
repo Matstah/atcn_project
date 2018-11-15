@@ -21,6 +21,9 @@ control MyVerifyChecksum(inout headers hdr, inout metadata meta) {
 control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
+
+    register<bit<1>>(4096) known_flows;
+
     action drop() {
         mark_to_drop();
     }
@@ -84,7 +87,30 @@ control MyIngress(inout headers hdr,
     // END: L2 LEARNING
 
     apply {
-
+        hash(meta.flow_id,
+	         HashAlgorithm.crc16,
+	         (bit<1>)0,
+	         { hdr.ipv4.srcAddr,
+	           hdr.ipv4.dstAddr,
+               hdr.tcp.srcPort,
+               hdr.tcp.dstPort,
+               hdr.ipv4.protocol},
+	         (bit<16>)1024);
+         if (hdr.ipv4.isValid()){
+             if (hdr.tcp.isValid()){
+                 if (standard_metadata.ingress_port == 4 || standard_metadata.ingress_port == 5 || standard_metadata.ingress_port == 6 || standard_metadata.ingress_port == 7){
+                     if (hdr.tcp.syn == 1){
+                         known_flows.write(meta.flow_id, 1);
+                     }
+                 }
+                 if (standard_metadata.ingress_port == 1 || standard_metadata.ingress_port == 2 || standard_metadata.ingress_port == 3){
+                     known_flows.read(meta.flow_is_known, meta.flow_id);
+                     if (meta.flow_is_known != 1){
+                         drop(); return;
+                     }
+                 }
+            }
+        }
         smac.apply();
         if (dmac.apply().hit){
             //

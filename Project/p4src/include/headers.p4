@@ -60,6 +60,8 @@ struct learn_t {
 }
 
 struct metadata {
+    bit<32> flow_id; // TODO: check bit length
+    bit<1> flow_is_known;
     learn_t learn;
 }
 
