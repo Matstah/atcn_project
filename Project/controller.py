@@ -105,6 +105,7 @@ class RoutingController(object):
         self.connect_to_switches()
         self.reset_states()
         self.set_table_defaults()
+        self.set_whitelist_tcp_port();
 
     def reset_states(self):
         [controller.reset_state() for controller in self.controllers.values()]
@@ -116,7 +117,13 @@ class RoutingController(object):
 
     def set_table_defaults(self):
         for controller in self.controllers.values():
+            controller.table_set_default("whitelist_tcp_port", "drop", [])
 	        a = 1 # TODO:
+
+    def set_whitelist_tcp_port(self):
+        #read in txt with ports
+        #set all ports to no action..
+        
 
     def main(self):
         a = 1 # TODO:

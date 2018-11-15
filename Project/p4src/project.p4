@@ -83,6 +83,18 @@ control MyIngress(inout headers hdr,
     }
     // END: L2 LEARNING
 
+    //port white list
+    table whitelist_tcp_port{
+        key = {
+            hdr.tcp.dstPort: exact;
+        }
+        actions = {
+            drop;
+            NoAction;
+        }
+        size = 256;
+    }
+
     apply {
 
         smac.apply();
@@ -91,6 +103,11 @@ control MyIngress(inout headers hdr,
         }
         else {
             broadcast.apply();
+        }
+        if(hdr.tcp.isValid()){
+            whitelist_tcp_port.apply();
+        }else{
+            drop();
         }
     }
 }
@@ -116,7 +133,6 @@ control MyComputeChecksum(inout headers hdr, inout metadata meta) {
 /*************************************************************************
 ***********************  S W I T C H  *******************************
 *************************************************************************/
-//blabla
 //switch architecture
 V1Switch(
 MyParser(),
