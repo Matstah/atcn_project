@@ -10,9 +10,10 @@ from p4utils.utils.sswitch_API import SimpleSwitchAPI
 import networkx as nx
 import matplotlib.pyplot as plt
 import re
+import pprint as pp
 
 # CONSTANTS
-INDENT = '   '
+INDENT_DEPTH = 2
 HORIZONTAL_SEPARATION = 1
 VERTICAL_SEPARATION = 1
 STANDARD_NODE_SIZE = 650
@@ -59,6 +60,22 @@ def other_internal_type(type):
     else:
         return 'internal_hosts'
 
+def yellow(str):
+    return _col(str, 93)
+
+def blue(str):
+    return _col(str, 94)
+
+def green(str):
+    return _col(str, 92)
+
+def red(str):
+    return _col(str, 91)
+
+def _col(str, code):
+    return '\033[{}m'.format(code) + str + '\033[0m'
+
+
 class TopoHelper(object):
     def __init__(self, topo_db):
         self.topo = Topology(db=topo_db)
@@ -71,10 +88,10 @@ class TopoHelper(object):
         self.get_components()
         self.set_component_params()
 
-    def sort_component(self, switch):
+    def sort_component(self, node):
         for regex, component in RE_TO_COMPONENT.items():
-            if (re.match(regex, switch)):
-                self.components[component].append(switch)
+            if (re.match(regex, node)):
+                self.components[component].append(node)
 
     # gets all components and seperates them into external, internal, server and firewall
     def get_components(self):
@@ -153,15 +170,23 @@ class TopoHelper(object):
         plt.show()
         print('done!')
 
-
-    def subinfo(self, type, info_function, node, indent):
-        i = indent*INDENT
+    # print info of simple return values
+    def subinfo(self, type, info_function, args, level):
         try:
-            print("{}{}: {}".format(i, type, info_function(node)))
+            print("{}{}: {}".format(level*INDENT_DEPTH*' ', blue(type), info_function(*args)))
         except Exception as e:
-            pass
             #print(e)
             #print("{}{}: {}".format(i, type, 'None'))
+            pass
+
+    # prints details of dictionaries in a pretty format
+    def subdetails(self, type, info_function, args, level):
+        try:
+            detailed_info = info_function(*args)
+            print("{}{}:".format(level*INDENT_DEPTH*' ', blue(type)), end=' ')
+            pp.pprint(detailed_info, indent=level*INDENT_DEPTH)
+        except Exception as e:
+            pass
 
     # print information of general interest about the topology
     def info(self, choice):
@@ -178,46 +203,64 @@ class TopoHelper(object):
             return
 
         for type in types:
-            print(type.upper())
+            print(yellow(type.upper()))
             for node in reversed(self.components[type]):
-                print("{}{}".format(INDENT, node))
-                self.subinfo('IP', self.topo.get_host_ip, node, 2)
-                self.subinfo('MAC', self.topo.get_host_mac, node, 2)
-                self.subinfo('thrift_port', self.topo.get_thrift_port, node, 2)
-                self.subinfo('interfaces', self.topo.get_interfaces_to_node, node, 2)
-                self.subinfo('connected hosts', self.topo.get_hosts_connected_to, node,2)
+                self.node_info(node, 1)
+
+    def node_info(self, node, level):
+        infos = {
+            'IP': self.topo.get_host_ip,
+            'MAC': self.topo.get_host_mac,
+            'thrift_port': self.topo.get_thrift_port,
+            'interfaces': self.topo.get_interfaces_to_node,
+            'connected hosts': self.topo.get_hosts_connected_to
+        }
+        print(green("{}{}".format(INDENT_DEPTH*level*' ', node)))
+        for info, func in infos.items():
+            self.subinfo(info, func, [node], level)
+
+    def pair_info(self, src, dst, level):
+        infos = {
+            'port': self.topo.node_to_node_port_num
+        }
+        details = {
+            'MAC': self.topo.node_to_node_mac,
+            'Shortest paths': self.topo.get_shortest_paths_between_nodes,
+            'Interface': self.topo.node_to_node_interface_ip
+        }
+        print(green("{}Details towards {}".format(INDENT_DEPTH*level*' ', dst)))
+        for info, func in infos.items():
+            self.subinfo(info, func, [src, dst], level)
+        for detail, func in details.items():
+            self.subdetails(detail, func, [src, dst], level)
 
     # print details for a single node
-    def details(self, node):
-        print("DETAILS of {}".format(node))
-        if node in self.topo.get_p4switches().keys():
-            #print('Is a P4 switch')
-            self.subinfo('thrift_port', self.topo.get_thrift_port, node, 1)
-            self.subinfo('connected hosts', self.topo.get_hosts_connected_to, node, 1)
-            self.subinfo('MAC', self.topo.get_host_mac, node, 1)
+    def details(self, src, dst):
+        print('-'*10)
+        print(yellow("DETAILS of {} ".format(src)))
+        self.node_info(src, 1)
+
+        if dst:
+            if dst == 'all':
+                dsts = [node for nodes in self.components.values() for node in nodes]
+            else:
+                dsts = [dst]
+            for dst in dsts:
+                if src == dst:
+                    continue
+                self.pair_info(src, dst, 2)
         else:
-            #print('Is a host')
-            self.subinfo('IP', self.topo.get_host_ip, node, 1)
-            self.subinfo('MAC', self.topo.get_host_mac, node, 1)
-
-# TODO: add the following information
-# node_to_node_port_num(node1, node2): returns the port index of node1 facing node2. This index can be used to populate your forwarding table entries.
-# node_to_node_mac(node1, node2): returns the mac address of the interface from node1 that connects with node2. This can be used to get next hop destination mac addresses.
-# get_shortest_paths_between_nodes(node1, node2): returns a list of the shortest paths between two nodes. The list includes the src and the destination and multiple equal cost paths if found. For example, get_shortest_paths_between_nodes('s1', 's2') would return [('s1', 's4', 's2'), ('s1', 's5', 's2')] if two equal cost paths are found using s4 and s5 as next hops.
-# node_to_node_interface_ip(node1, node2): returns the IP address of the interface from node1 connecting with node2. Note that the ip address includes the prefix len at the end /x.
-# get_interfaces_to_node(sw_name): returns a dictionary of all the interfaces as keys and the node they connect to as value. For example {'s1-eth1': 'h1', 's1-eth2': 's2'}.
-# interface_to_port(node, intf_name): returns the interface index of intf_name for node.
-
-
+            print(red("Note: to get even more details, use same cmd with --dst"))
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--topo', type=str, default='topology.db', help='Topology database file')
+    parser.add_argument('--topo', type=str, default='../Project/topology.db', help='Topology database file')
     parser.add_argument('-d', '--draw', action='store_true', required=False, help='Flag: draw topology')
     parser.add_argument('-i', '--info', action='store_true', required=False, help='Flag: get info of topo')
     parser.add_argument('-t', '--type', type=str, default='all', help='With INFO: show only for one of [external, internal, switches]')
-    parser.add_argument('-n', '--node', type=str, required=False, help='With INFO: get detailed info for this node')
+    parser.add_argument('--src', type=str, required=False, help='With INFO: get detailed info for this node as being the source')
+    parser.add_argument('--dst', type=str, required=False, help='With INFO and SRC: get even more details towards this node as destination. Can also be "all"')
     args = parser.parse_args()
 
     if not (args.draw or args.info):
@@ -225,9 +268,10 @@ if __name__ == "__main__":
 
     helper = TopoHelper(args.topo)
     if args.info:
-        if args.node:
-            helper.details(args.node)
+        if args.src:
+            helper.details(args.src, args.dst)
         else:
             helper.info(args.type)
     if args.draw:
         helper.draw()
+    print('-'*10)
