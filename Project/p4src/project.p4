@@ -175,19 +175,20 @@ control MyIngress(inout headers hdr,
              	         (bit<16>)1024);
                      known_flows.read(meta.flow_is_known, meta.flow_id);
                      if (meta.flow_is_known != 1){
-                         //TODO: change to black filter.. whitelist that scanns ports
-                         //will drop all packets not going to server..
-                    //pass on to white list...
-                         //drop();
-                         //return;
+                         //port filter, checks if traffic is for server
+                         whitelist_tcp_dst_port.apply();
+                         //TODO: what about UDP?
+                         //ip blacklist filter, checks if traffic comes from spam ip src
+                         blacklist_src_ip.apply();
                      }
-                     //port filter
-                     whitelist_tcp_dst_port.apply();
-                 }
-                 //ip blacklist filter
-                 blacklist_src_ip.apply();
-             }
-        }
+                }else{
+                    //TODO: we receive non tcp/udp traffic.. drop
+                    //TODO: what about pinging server? should this be possible?
+                    //TODO: here we could do port knocking..
+                    //drop();
+                    //return;
+                }
+            }
         smac.apply();
         if (dmac.apply().hit){
         }
