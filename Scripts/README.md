@@ -23,7 +23,13 @@ Example Usage:
 python topo_helper.py -d
 ```
 
-or the topology database file can be provided with --topo
+Label the edges with information
+```bash
+python topo_helper.py -d -e <label_type>
+```
+where `<label_type>` = port, ip, mac
+
+The topology database file can be provided with --topo if there is a problem with the default path or another file should be used.
 ```bash
 python topo_helper.py -d --topo some/relative/path/topology.db
 ```

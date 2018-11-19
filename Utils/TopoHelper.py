@@ -9,29 +9,45 @@ import pprint as pp
 # CONSTANTS
 INDENT_DEPTH = 2
 HORIZONTAL_SEPARATION = 1
-VERTICAL_SEPARATION = 1
+VERTICAL_SEPARATION = 2
 STANDARD_NODE_SIZE = 650
+SWITCH_NODE_SIZE_FACTOR = 1.5
+HOST_NODE_SIZE_FACTOR = 1.0
 RE_TO_COMPONENT = {
     r"fir": 'firewalls',
     r"hi": 'internal_hosts',
     r"he": 'external_hosts',
-    r"ser": 'servers'
+    r"ser": 'servers',
+    r"ge": 'external_gateways',
+    r"gi": 'internal_gateways'
 }
 COMPONENT_TO_PARAMS = {
     'external_hosts': {
-        'x': -1,
+        'x': -2,
         'shape': 's',
         'color': 'b',
-        'size': STANDARD_NODE_SIZE
+        'size': STANDARD_NODE_SIZE*HOST_NODE_SIZE_FACTOR
     },
     'internal_hosts': {
-        'x': 1,
+        'x': 2,
         'shape': 's',
         'color': 'g',
-        'size': STANDARD_NODE_SIZE
+        'size': STANDARD_NODE_SIZE*HOST_NODE_SIZE_FACTOR
+    },
+    'external_gateways': {
+        'x': -1,
+        'shape': 'd',
+        'color': 'b',
+        'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
+    },
+    'internal_gateways' : {
+        'x': 1,
+        'shape': 'd',
+        'color': 'b',
+        'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
     },
     'servers': {
-        'x': 1,
+        'x': 2,
         'shape': 's',
         'color': 'y',
         'size': 800
@@ -40,7 +56,7 @@ COMPONENT_TO_PARAMS = {
         'x': 0,
         'shape': 'd',
         'color': 'r',
-        'size': STANDARD_NODE_SIZE
+        'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
     }
 }
 
@@ -143,21 +159,24 @@ class TopoHelper(object):
     # gets the label of the provided type for an edge
     def get_edge_label(self, edge, type):
         if type == 'port':
-            out_port = self.PAIR_INFO_FUNCS['port'](edge[0], edge[1])
-            in_port = self.PAIR_INFO_FUNCS['port'](edge[1], edge[0])
-            if in_port != 0:
-                return "switch ports: {} / {}".format(out_port, in_port)
-            else:
-                return "switch port: {}".format(out_port)
+            port0 = self.PAIR_INFO_FUNCS['port'](edge[0], edge[1])
+            port1 = self.PAIR_INFO_FUNCS['port'](edge[1], edge[0])
+            return "{}-port={}\n{}-port={}".format(edge[0], port0, edge[1], port1)
 
         elif type == 'ip':
-            ip = self.NODE_INFO_FUNCS['IP'](edge[1])
-            return "host ip: {}".format(ip)
+            ip=None
+            for i in range(2):
+                try:
+                    ip = self.NODE_INFO_FUNCS['IP'](edge[i])
+                    if ip: return "host ip: {}".format(ip)
+                except:
+                    continue
+            return ""
 
         elif type == 'mac':
-            out_mac = self.PAIR_DETAILS_FUNCS['MAC'](edge[0], edge[1])
-            in_mac = self.PAIR_DETAILS_FUNCS['MAC'](edge[1], edge[0])
-            return "link macs: {} / {}".format(out_mac, in_mac)
+            mac0 = self.PAIR_DETAILS_FUNCS['MAC'](edge[0], edge[1])
+            mac1 = self.PAIR_DETAILS_FUNCS['MAC'](edge[1], edge[0])
+            return "{}-mac={}\n{}-mac={}".format(edge[0], mac0, edge[1], mac1)
 
         else:
             return "Unrecognized edge label type"
