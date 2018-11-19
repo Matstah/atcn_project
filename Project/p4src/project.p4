@@ -189,15 +189,15 @@ control MyIngress(inout headers hdr,
                     //return;
                 }
             }
-        smac.apply();
-        if (dmac.apply().hit){
-        }
-        else {
-            broadcast.apply();
+            smac.apply();
+            if (dmac.apply().hit){
+            }
+            else {
+                broadcast.apply();
+            }
         }
     }
 }
-
 /*************************************************************************
 ****************  E G R E S S   P R O C E S S I N G   *******************
 *************************************************************************/
