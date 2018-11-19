@@ -1,18 +1,13 @@
-#!/usr/bin/env python
-
-"""
-Requires matplotlib:
-    python -m pip install -U matplotlib --user
-"""
 from __future__ import print_function
 from p4utils.utils.topology import Topology
 from p4utils.utils.sswitch_API import SimpleSwitchAPI
 import networkx as nx
 import matplotlib.pyplot as plt
 import re
+import pprint as pp
 
 # CONSTANTS
-INDENT = '   '
+INDENT_DEPTH = 2
 HORIZONTAL_SEPARATION = 1
 VERTICAL_SEPARATION = 1
 STANDARD_NODE_SIZE = 650
@@ -59,22 +54,39 @@ def other_internal_type(type):
     else:
         return 'internal_hosts'
 
+def yellow(str):
+    return _col(str, 93)
+
+def blue(str):
+    return _col(str, 94)
+
+def green(str):
+    return _col(str, 92)
+
+def red(str):
+    return _col(str, 91)
+
+def _col(str, code):
+    return '\033[{}m'.format(code) + str + '\033[0m'
+
+
 class TopoHelper(object):
-    def __init__(self, topo_db):
+    def __init__(self, topo_db, disable_print=False):
         self.topo = Topology(db=topo_db)
         self.components = dict((type, []) for type in COMPONENT_TO_PARAMS.keys())
         self.positions = {}
         self.labels = {}
+        self.print = not disable_print
         self.init()
 
     def init(self):
         self.get_components()
         self.set_component_params()
 
-    def sort_component(self, switch):
+    def sort_component(self, node):
         for regex, component in RE_TO_COMPONENT.items():
-            if (re.match(regex, switch)):
-                self.components[component].append(switch)
+            if (re.match(regex, node)):
+                self.components[component].append(node)
 
     # gets all components and seperates them into external, internal, server and firewall
     def get_components(self):
@@ -153,33 +165,91 @@ class TopoHelper(object):
         plt.show()
         print('done!')
 
+    # print info of simple return values
+    def subinfo(self, type, info_function, args, level):
+        try:
+            infos = info_function(*args)
+            if self.print: print("{}{}: {}".format(level*INDENT_DEPTH*' ', blue(type), infos))
+            return infos
+        except Exception as e:
+            #print(e)
+            #print("{}{}: {}".format(i, type, 'None'))
+            return ''
 
-    def info(self):
-        for type in self.components.keys():
-            print(type.upper())
-            for node in self.components[type]:
-                print("{}{}".format(INDENT, node))
-                try:
-                    print("{}{}IP: {}".format(INDENT, INDENT, self.topo.get_host_ip(node)))
-                except:
-                    print("{}{}IP: {}".format(INDENT, INDENT, 'None'))
+    # prints details of dictionaries in a pretty format
+    def subdetails(self, type, info_function, args, level):
+        try:
+            detailed_info = info_function(*args)
+            if self.print:
+                print("{}{}:".format(level*INDENT_DEPTH*' ', blue(type)), end=' ')
+                pp.pprint(detailed_info, indent=level*INDENT_DEPTH)
+            return detailed_info
+        except Exception as e:
+            return {}
 
+    # print information of general interest about the topology
+    def info(self, choice):
+        if choice == "all":
+            types = self.components.keys()
+        elif choice == "external":
+            types = ["external_hosts"]
+        elif choice == "internal":
+            types = ["internal_hosts", "servers"]
+        elif choice == "switches":
+            types = ["firewalls"]
+        else:
+            print("Choice not recognized")
+            return
 
+        for type in types:
+            print(yellow(type.upper()))
+            for node in reversed(self.components[type]):
+                self.node_info(node, 1)
 
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--topo', type=str, default='topology.db', help='Topology database file')
-    parser.add_argument('-d', '--draw', action='store_true', required=False, help='Flag: draw topology')
-    parser.add_argument('-i', '--info', action='store_true', required=False, help='Flag: get info of topo')
-    args = parser.parse_args()
+    def node_info(self, node, level=0):
+        infos = {
+            'IP': self.topo.get_host_ip,
+            'MAC': self.topo.get_host_mac,
+            'thrift_port': self.topo.get_thrift_port,
+            'interfaces': self.topo.get_interfaces_to_node,
+            'connected hosts': self.topo.get_hosts_connected_to
+        }
+        if self.print: print(green("{}{}".format(INDENT_DEPTH*level*' ', node)))
+        for info, func in infos.items():
+            infos[info] = self.subinfo(info, func, [node], level)
+        return infos
 
-    if not (args.draw or args.info):
-        print('Nothing to do! Choose an option! [help with -h]')
+    def pair_info(self, src, dst, level=0):
+        result = {}
+        infos = {
+            'port': self.topo.node_to_node_port_num
+        }
+        details = {
+            'MAC': self.topo.node_to_node_mac,
+            'Shortest paths': self.topo.get_shortest_paths_between_nodes,
+            'Interface': self.topo.node_to_node_interface_ip
+        }
+        if self.print: print(green("{}Details towards {}".format(INDENT_DEPTH*level*' ', dst)))
+        for info, func in infos.items():
+            result[info] = self.subinfo(info, func, [src, dst], level)
+        for detail, func in details.items():
+            result[detail] = self.subdetails(detail, func, [src, dst], level)
+        return result
 
-    helper = TopoHelper(args.topo)
-    if args.info:
-        helper.info()
-    if args.draw:
-        helper.draw()
-    print("DONE!")
+    # print details for a single node
+    def details(self, src, dst):
+        print('-'*10)
+        print(yellow("DETAILS of {} ".format(src)))
+        self.node_info(src, 1)
+
+        if dst:
+            if dst == 'all':
+                dsts = [node for nodes in self.components.values() for node in nodes]
+            else:
+                dsts = [dst]
+            for dst in dsts:
+                if src == dst:
+                    continue
+                self.pair_info(src, dst, 2)
+        else:
+            print(red("Note: to get even more details, use same cmd with --dst"))
