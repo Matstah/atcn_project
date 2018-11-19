@@ -135,19 +135,15 @@ control MyIngress(inout headers hdr,
         //        hdr.ipv4.protocol},
 	    //      (bit<16>)1024);
          if (hdr.ipv4.isValid()){
-             if (hdr.tcp.isValid()){
-<<<<<<< HEAD
-                 if (standard_metadata.ingress_port == 4 || standard_metadata.ingress_port == 5 || standard_metadata.ingress_port == 6 || standard_metadata.ingress_port == 7){
-                     //in2ext
-                     //dst ip blacklist filter
-                     blacklist_dst_ip.apply();
-                     //stateless firewall
-=======
-                 if (standard_metadata.ingress_port == 4 ||
-                     standard_metadata.ingress_port == 5 ||
-                     standard_metadata.ingress_port == 6 ||
-                     standard_metadata.ingress_port == 7){
->>>>>>> start
+             if (standard_metadata.ingress_port == 4 ||
+                 standard_metadata.ingress_port == 5 ||
+                 standard_metadata.ingress_port == 6 ||
+                 standard_metadata.ingress_port == 7){
+                 //in2ext
+                 //dst ip blacklist filter
+                 blacklist_dst_ip.apply();
+                 //stateless firewall
+                 if (hdr.tcp.isValid()){
                      hash(meta.flow_id,
              	         HashAlgorithm.crc16,
              	         (bit<1>)0,
@@ -161,15 +157,13 @@ control MyIngress(inout headers hdr,
                          known_flows.write(meta.flow_id, 1);
                      }
                  }
-<<<<<<< HEAD
-                 if (standard_metadata.ingress_port == 1 || standard_metadata.ingress_port == 2 || standard_metadata.ingress_port == 3){
-                     //ext2in
-                     //stateless firewall
-=======
-                 if (standard_metadata.ingress_port == 1 ||
-                     standard_metadata.ingress_port == 2 ||
-                     standard_metadata.ingress_port == 3){
->>>>>>> start
+             }
+             if (standard_metadata.ingress_port == 1 ||
+                 standard_metadata.ingress_port == 2 ||
+                 standard_metadata.ingress_port == 3){
+                 //ext2in
+                 //stateless firewall
+                 if (hdr.tcp.isValid()){
                      hash(meta.flow_id,
              	         HashAlgorithm.crc16,
              	         (bit<1>)0,
@@ -181,18 +175,18 @@ control MyIngress(inout headers hdr,
              	         (bit<16>)1024);
                      known_flows.read(meta.flow_is_known, meta.flow_id);
                      if (meta.flow_is_known != 1){
-                         drop();
-                         return;
+                         //TODO: change to black filter.. whitelist that scanns ports
+                         //will drop all packets not going to server..
+                    //pass on to white list...
+                         //drop();
+                         //return;
                      }
                      //port filter
-                     if(hdr.tcp.isValid()){
-                         whitelist_tcp_dst_port.apply();
-                     }
-                     //ip blacklist filter
-                     blacklist_src_ip.apply();
+                     whitelist_tcp_dst_port.apply();
                  }
-            }
-
+                 //ip blacklist filter
+                 blacklist_src_ip.apply();
+             }
         }
         smac.apply();
         if (dmac.apply().hit){
