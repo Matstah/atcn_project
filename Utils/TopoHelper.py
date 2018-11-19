@@ -80,8 +80,26 @@ class TopoHelper(object):
         self.init()
 
     def init(self):
+        self.init_func_dicts()
         self.get_components()
         self.set_component_params()
+
+    def init_func_dicts(self):
+        self.NODE_INFO_FUNCS = {
+            'IP': self.topo.get_host_ip,
+            'MAC': self.topo.get_host_mac,
+            'thrift_port': self.topo.get_thrift_port,
+            'interfaces': self.topo.get_interfaces_to_node,
+            'connected hosts': self.topo.get_hosts_connected_to
+        }
+        self.PAIR_INFO_FUNCS = {
+            'port': self.topo.node_to_node_port_num
+        }
+        self.PAIR_DETAILS_FUNCS = {
+            'MAC': self.topo.node_to_node_mac,
+            'Shortest paths': self.topo.get_shortest_paths_between_nodes,
+            'Interface': self.topo.node_to_node_interface_ip
+        }
 
     def sort_component(self, node):
         for regex, component in RE_TO_COMPONENT.items():
@@ -122,7 +140,30 @@ class TopoHelper(object):
         for type, components in self.components.items():
             self.set_node_params(components, type)
 
-    def draw(self):
+    # gets the label of the provided type for an edge
+    def get_edge_label(self, edge, type):
+        if type == 'port':
+            out_port = self.PAIR_INFO_FUNCS['port'](edge[0], edge[1])
+            in_port = self.PAIR_INFO_FUNCS['port'](edge[1], edge[0])
+            if in_port != 0:
+                return "switch ports: {} / {}".format(out_port, in_port)
+            else:
+                return "switch port: {}".format(out_port)
+
+        elif type == 'ip':
+            ip = self.NODE_INFO_FUNCS['IP'](edge[1])
+            return "host ip: {}".format(ip)
+
+        elif type == 'mac':
+            out_mac = self.PAIR_DETAILS_FUNCS['MAC'](edge[0], edge[1])
+            in_mac = self.PAIR_DETAILS_FUNCS['MAC'](edge[1], edge[0])
+            return "link macs: {} / {}".format(out_mac, in_mac)
+
+        else:
+            return "Unrecognized edge label type"
+
+
+    def draw(self, edge_label_type=None):
         G = self.topo.network_graph
         print('Drawing...', end='')
         """ DEBUG """
@@ -152,14 +193,15 @@ class TopoHelper(object):
         )
 
         # label the edges
-        edge_labels = {}
-        for edge in G.edges():
-            edge_labels[edge] = edge # TODO:
+        if edge_label_type:
+            edge_labels = {}
+            for edge in G.edges():
+                edge_labels[edge] = self.get_edge_label(edge, edge_label_type)
 
-        nx.draw_networkx_edge_labels(G, self.positions,
-            edge_labels = edge_labels,
-            label_pos = 0.5,
-        )
+            nx.draw_networkx_edge_labels(G, self.positions,
+                edge_labels = edge_labels,
+                label_pos = 0.5,
+            )
 
         # show the plot
         plt.show()
@@ -207,32 +249,18 @@ class TopoHelper(object):
                 self.node_info(node, 1)
 
     def node_info(self, node, level=0):
-        infos = {
-            'IP': self.topo.get_host_ip,
-            'MAC': self.topo.get_host_mac,
-            'thrift_port': self.topo.get_thrift_port,
-            'interfaces': self.topo.get_interfaces_to_node,
-            'connected hosts': self.topo.get_hosts_connected_to
-        }
+        result = {}
         if self.print: print(green("{}{}".format(INDENT_DEPTH*level*' ', node)))
-        for info, func in infos.items():
-            infos[info] = self.subinfo(info, func, [node], level)
-        return infos
+        for info, func in self.NODE_INFO_FUNCS.items():
+            result[info] = self.subinfo(info, func, [node], level)
+        return result
 
     def pair_info(self, src, dst, level=0):
         result = {}
-        infos = {
-            'port': self.topo.node_to_node_port_num
-        }
-        details = {
-            'MAC': self.topo.node_to_node_mac,
-            'Shortest paths': self.topo.get_shortest_paths_between_nodes,
-            'Interface': self.topo.node_to_node_interface_ip
-        }
         if self.print: print(green("{}Details towards {}".format(INDENT_DEPTH*level*' ', dst)))
-        for info, func in infos.items():
+        for info, func in self.PAIR_INFO_FUNCS.items():
             result[info] = self.subinfo(info, func, [src, dst], level)
-        for detail, func in details.items():
+        for detail, func in self.PAIR_DETAILS_FUNCS.items():
             result[detail] = self.subdetails(detail, func, [src, dst], level)
         return result
 
