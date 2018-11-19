@@ -6,6 +6,7 @@
 #include "include/headers.p4"
 #include "include/parsers.p4"
 
+
 /*************************************************************************
 ************   C H E C K S U M    V E R I F I C A T I O N   *************
 *************************************************************************/
@@ -86,8 +87,32 @@ control MyIngress(inout headers hdr,
     }
     // END: L2 LEARNING
 
+//BLACK and WHITE lists
+    //blacklist to block ip
+    table blacklist_src_ip {
+        key = {
+            hdr.ipv4.dstAddr: range;
+        }
+        actions = {
+            drop;
+            NoAction;
+        }
+        size = 65536; //2^16
+    }
+
+    table blacklist_dst_ip {
+        key = {
+            hdr.ipv4.dstAddr: range;
+        }
+        actions = {
+            drop;
+            NoAction;
+        }
+        size = 65536; //2^16
+    }
+
     //port white list
-    table whitelist_tcp_port{
+    table whitelist_tcp_dst_port{
         key = {
             hdr.tcp.dstPort: exact;
         }
@@ -95,8 +120,9 @@ control MyIngress(inout headers hdr,
             drop;
             NoAction;
         }
-        size = 256;
+        size = 255; //16bit for ports.., but only a few to allow
     }
+//END BLACK and WHITE lists
 
     apply {
         // hash(meta.flow_id,
@@ -111,6 +137,10 @@ control MyIngress(inout headers hdr,
          if (hdr.ipv4.isValid()){
              if (hdr.tcp.isValid()){
                  if (standard_metadata.ingress_port == 4 || standard_metadata.ingress_port == 5 || standard_metadata.ingress_port == 6 || standard_metadata.ingress_port == 7){
+                     //in2ext
+                     //dst ip blacklist filter
+                     blacklist_dst_ip.apply();
+                     //stateless firewall
                      hash(meta.flow_id,
              	         HashAlgorithm.crc16,
              	         (bit<1>)0,
@@ -125,6 +155,8 @@ control MyIngress(inout headers hdr,
                      }
                  }
                  if (standard_metadata.ingress_port == 1 || standard_metadata.ingress_port == 2 || standard_metadata.ingress_port == 3){
+                     //ext2in
+                     //stateless firewall
                      hash(meta.flow_id,
              	         HashAlgorithm.crc16,
              	         (bit<1>)0,
@@ -138,20 +170,21 @@ control MyIngress(inout headers hdr,
                      if (meta.flow_is_known != 1){
                          drop(); return;
                      }
+                     //port filter
+                     if(hdr.tcp.isValid()){
+                         whitelist_tcp_dst_port.apply();
+                     }
+                     //ip blacklist filter
+                     blacklist_src_ip.apply();
                  }
             }
+
         }
         smac.apply();
         if (dmac.apply().hit){
-            //
         }
         else {
             broadcast.apply();
-        }
-        if(hdr.tcp.isValid()){
-            whitelist_tcp_port.apply();
-        }else{
-            drop();
         }
     }
 }
