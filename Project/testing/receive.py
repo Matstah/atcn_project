@@ -30,10 +30,27 @@ def isNotOutgoing(my_mac):
 
     return _isNotOutgoing
 
+def pretty_print_layer(layer, content):
+    splits = repr(content).split()
+    layer_name = splits.pop(0)
+    if layer_name != 'None':
+        print("{} - Received layer: {}".format(layer.upper(), layer_name))
+    else:
+        print("No '{}' layer".format(layer))
+        return
+
+    splits.pop() # remove last element
+    indent = 2
+    for x in splits:
+        vals = x.split("=")
+        if len(vals) < 2:
+            indent = indent + 2
+        print("{}{}".format(' '*indent, vals))
+
 def handle_pkt(pkt, layers):
     for layer in layers:
-        print(layer, pkt.getlayer(LAYER_MAP[layer]))
-    print
+            pretty_print_layer(layer, pkt.getlayer(LAYER_MAP[layer]))
+    print '-'*10
 
 
 def receive(layers):

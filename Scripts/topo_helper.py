@@ -14,6 +14,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--topo', type=str, default='../Project/topology.db', help='Topology database file')
     parser.add_argument('-d', '--draw', action='store_true', required=False, help='Flag: draw topology')
+    parser.add_argument('-e', '--edge', type=str, required=False, help='Edge label type. Choose from one of [port, ip, mac]')
     parser.add_argument('-i', '--info', action='store_true', required=False, help='Flag: get info of topo')
     parser.add_argument('-t', '--type', type=str, default='all', help='With INFO: show only for one of [external, internal, switches]')
     parser.add_argument('--src', type=str, required=False, help='With INFO: get detailed info for this node as being the source')
@@ -30,5 +31,5 @@ if __name__ == "__main__":
         else:
             helper.info(args.type)
     if args.draw:
-        helper.draw()
+        helper.draw(args.edge)
     print('-'*10)

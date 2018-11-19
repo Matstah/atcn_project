@@ -11,6 +11,18 @@
     {
       "cmd": "sudo python controller.py --sw fir &",
       "reboot_run": true
+    },
+    {
+      "cmd": "sudo python controller.py --sw ge1 &",
+      "reboot_run": true
+    },
+    {
+      "cmd": "sudo python controller.py --sw ge2 &",
+      "reboot_run": true
+    },
+    {
+      "cmd": "sudo python controller.py --sw ge3 &",
+      "reboot_run": true
     }
   ],
   "topo_module": {
@@ -33,7 +45,8 @@
     "assignment_strategy": "mixed",
     "auto_arp_tables": false,
     "links": [
-      ["he1", "fir"], ["he2", "fir"], ["he3", "fir"],
+      ["he1", "ge1"], ["he2", "ge2"], ["he3", "ge3"],
+      ["ge1", "fir"], ["ge2", "fir"], ["ge3", "fir"],
       ["hi1", "fir"], ["hi2", "fir"], ["hi3", "fir"],
       ["ser", "fir"]
     ],
@@ -54,8 +67,10 @@
       }
     },
     "switches": {
-      "fir": {
-      }
+      "fir": {},
+      "ge1": {"program": "p4external/external_gateway.p4"},
+      "ge2": {"program": "p4external/external_gateway.p4"},
+      "ge3": {"program": "p4external/external_gateway.p4"}
     }
   }
 }

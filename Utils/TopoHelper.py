@@ -9,29 +9,45 @@ import pprint as pp
 # CONSTANTS
 INDENT_DEPTH = 2
 HORIZONTAL_SEPARATION = 1
-VERTICAL_SEPARATION = 1
+VERTICAL_SEPARATION = 2
 STANDARD_NODE_SIZE = 650
+SWITCH_NODE_SIZE_FACTOR = 1.5
+HOST_NODE_SIZE_FACTOR = 1.0
 RE_TO_COMPONENT = {
     r"fir": 'firewalls',
     r"hi": 'internal_hosts',
     r"he": 'external_hosts',
-    r"ser": 'servers'
+    r"ser": 'servers',
+    r"ge": 'external_gateways',
+    r"gi": 'internal_gateways'
 }
 COMPONENT_TO_PARAMS = {
     'external_hosts': {
-        'x': -1,
+        'x': -2,
         'shape': 's',
         'color': 'b',
-        'size': STANDARD_NODE_SIZE
+        'size': STANDARD_NODE_SIZE*HOST_NODE_SIZE_FACTOR
     },
     'internal_hosts': {
-        'x': 1,
+        'x': 2,
         'shape': 's',
         'color': 'g',
-        'size': STANDARD_NODE_SIZE
+        'size': STANDARD_NODE_SIZE*HOST_NODE_SIZE_FACTOR
+    },
+    'external_gateways': {
+        'x': -1,
+        'shape': 'd',
+        'color': 'b',
+        'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
+    },
+    'internal_gateways' : {
+        'x': 1,
+        'shape': 'd',
+        'color': 'b',
+        'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
     },
     'servers': {
-        'x': 1,
+        'x': 2,
         'shape': 's',
         'color': 'y',
         'size': 800
@@ -40,7 +56,7 @@ COMPONENT_TO_PARAMS = {
         'x': 0,
         'shape': 'd',
         'color': 'r',
-        'size': STANDARD_NODE_SIZE
+        'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
     }
 }
 
@@ -80,8 +96,26 @@ class TopoHelper(object):
         self.init()
 
     def init(self):
+        self.init_func_dicts()
         self.get_components()
         self.set_component_params()
+
+    def init_func_dicts(self):
+        self.NODE_INFO_FUNCS = {
+            'IP': self.topo.get_host_ip,
+            'MAC': self.topo.get_host_mac,
+            'thrift_port': self.topo.get_thrift_port,
+            'interfaces': self.topo.get_interfaces_to_node,
+            'connected hosts': self.topo.get_hosts_connected_to
+        }
+        self.PAIR_INFO_FUNCS = {
+            'port': self.topo.node_to_node_port_num
+        }
+        self.PAIR_DETAILS_FUNCS = {
+            'MAC': self.topo.node_to_node_mac,
+            'Shortest paths': self.topo.get_shortest_paths_between_nodes,
+            'Interface': self.topo.node_to_node_interface_ip
+        }
 
     def sort_component(self, node):
         for regex, component in RE_TO_COMPONENT.items():
@@ -122,7 +156,33 @@ class TopoHelper(object):
         for type, components in self.components.items():
             self.set_node_params(components, type)
 
-    def draw(self):
+    # gets the label of the provided type for an edge
+    def get_edge_label(self, edge, type):
+        if type == 'port':
+            port0 = self.PAIR_INFO_FUNCS['port'](edge[0], edge[1])
+            port1 = self.PAIR_INFO_FUNCS['port'](edge[1], edge[0])
+            return "{}-port={}\n{}-port={}".format(edge[0], port0, edge[1], port1)
+
+        elif type == 'ip':
+            ip=None
+            for i in range(2):
+                try:
+                    ip = self.NODE_INFO_FUNCS['IP'](edge[i])
+                    if ip: return "host ip: {}".format(ip)
+                except:
+                    continue
+            return ""
+
+        elif type == 'mac':
+            mac0 = self.PAIR_DETAILS_FUNCS['MAC'](edge[0], edge[1])
+            mac1 = self.PAIR_DETAILS_FUNCS['MAC'](edge[1], edge[0])
+            return "{}-mac={}\n{}-mac={}".format(edge[0], mac0, edge[1], mac1)
+
+        else:
+            return "Unrecognized edge label type"
+
+
+    def draw(self, edge_label_type=None):
         G = self.topo.network_graph
         print('Drawing...', end='')
         """ DEBUG """
@@ -152,14 +212,15 @@ class TopoHelper(object):
         )
 
         # label the edges
-        edge_labels = {}
-        for edge in G.edges():
-            edge_labels[edge] = edge # TODO:
+        if edge_label_type:
+            edge_labels = {}
+            for edge in G.edges():
+                edge_labels[edge] = self.get_edge_label(edge, edge_label_type)
 
-        nx.draw_networkx_edge_labels(G, self.positions,
-            edge_labels = edge_labels,
-            label_pos = 0.5,
-        )
+            nx.draw_networkx_edge_labels(G, self.positions,
+                edge_labels = edge_labels,
+                label_pos = 0.5,
+            )
 
         # show the plot
         plt.show()
@@ -207,32 +268,18 @@ class TopoHelper(object):
                 self.node_info(node, 1)
 
     def node_info(self, node, level=0):
-        infos = {
-            'IP': self.topo.get_host_ip,
-            'MAC': self.topo.get_host_mac,
-            'thrift_port': self.topo.get_thrift_port,
-            'interfaces': self.topo.get_interfaces_to_node,
-            'connected hosts': self.topo.get_hosts_connected_to
-        }
+        result = {}
         if self.print: print(green("{}{}".format(INDENT_DEPTH*level*' ', node)))
-        for info, func in infos.items():
-            infos[info] = self.subinfo(info, func, [node], level)
-        return infos
+        for info, func in self.NODE_INFO_FUNCS.items():
+            result[info] = self.subinfo(info, func, [node], level)
+        return result
 
     def pair_info(self, src, dst, level=0):
         result = {}
-        infos = {
-            'port': self.topo.node_to_node_port_num
-        }
-        details = {
-            'MAC': self.topo.node_to_node_mac,
-            'Shortest paths': self.topo.get_shortest_paths_between_nodes,
-            'Interface': self.topo.node_to_node_interface_ip
-        }
         if self.print: print(green("{}Details towards {}".format(INDENT_DEPTH*level*' ', dst)))
-        for info, func in infos.items():
+        for info, func in self.PAIR_INFO_FUNCS.items():
             result[info] = self.subinfo(info, func, [src, dst], level)
-        for detail, func in details.items():
+        for detail, func in self.PAIR_DETAILS_FUNCS.items():
             result[detail] = self.subdetails(detail, func, [src, dst], level)
         return result
 
