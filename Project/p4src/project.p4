@@ -91,7 +91,7 @@ control MyIngress(inout headers hdr,
     //blacklist to block ip
     table blacklist_src_ip {
         key = {
-            hdr.ipv4.dstAddr: range;
+            hdr.ipv4.srcAddr: exact;
         }
         actions = {
             drop;
@@ -102,7 +102,7 @@ control MyIngress(inout headers hdr,
 
     table blacklist_dst_ip {
         key = {
-            hdr.ipv4.dstAddr: range;
+            hdr.ipv4.dstAddr: exact;
         }
         actions = {
             drop;
@@ -141,7 +141,9 @@ control MyIngress(inout headers hdr,
                  standard_metadata.ingress_port == 7){
                  //in2ext
                  //dst ip blacklist filter
-                 blacklist_dst_ip.apply();
+                 if(blacklist_dst_ip.apply().hit){
+                     return; //why does it only block that way and not with drop??
+                 }
                  //stateless firewall
                  if (hdr.tcp.isValid()){
                      hash(meta.flow_id,
@@ -176,10 +178,10 @@ control MyIngress(inout headers hdr,
                      known_flows.read(meta.flow_is_known, meta.flow_id);
                      if (meta.flow_is_known != 1){
                          //port filter, checks if traffic is for server
-                         whitelist_tcp_dst_port.apply();
+                         if(whitelist_tcp_dst_port.apply().hit){
+                             return;
+                         }
                          //TODO: what about UDP?
-                         //ip blacklist filter, checks if traffic comes from spam ip src
-                         blacklist_src_ip.apply();
                      }
                 }else{
                     //TODO: we receive non tcp/udp traffic.. drop
@@ -187,6 +189,11 @@ control MyIngress(inout headers hdr,
                     //TODO: here we could do port knocking..
                     //drop();
                     //return;
+
+                }
+                //ip blacklist filter, checks if traffic comes from spam ip src
+                if(blacklist_src_ip.apply().hit){
+                    return;
                 }
             }
             smac.apply();
