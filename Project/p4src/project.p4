@@ -6,6 +6,7 @@
 #include "include/headers.p4"
 #include "include/parsers.p4"
 
+
 /*************************************************************************
 ************   C H E C K S U M    V E R I F I C A T I O N   *************
 *************************************************************************/
@@ -86,6 +87,43 @@ control MyIngress(inout headers hdr,
     }
     // END: L2 LEARNING
 
+//BLACK and WHITE lists
+    //blacklist to block ip
+    table blacklist_src_ip {
+        key = {
+            hdr.ipv4.dstAddr: range;
+        }
+        actions = {
+            drop;
+            NoAction;
+        }
+        size = 65536; //2^16
+    }
+
+    table blacklist_dst_ip {
+        key = {
+            hdr.ipv4.dstAddr: range;
+        }
+        actions = {
+            drop;
+            NoAction;
+        }
+        size = 65536; //2^16
+    }
+
+    //port white list
+    table whitelist_tcp_dst_port{
+        key = {
+            hdr.tcp.dstPort: exact;
+        }
+        actions = {
+            drop;
+            NoAction;
+        }
+        size = 255; //16bit for ports.., but only a few to allow
+    }
+//END BLACK and WHITE lists
+
     apply {
         // hash(meta.flow_id,
 	    //      HashAlgorithm.crc16,
@@ -97,54 +135,69 @@ control MyIngress(inout headers hdr,
         //        hdr.ipv4.protocol},
 	    //      (bit<16>)1024);
          if (hdr.ipv4.isValid()){
-            //  if (hdr.tcp.isValid()){
-            //      if (standard_metadata.ingress_port == 4 ||
-            //          standard_metadata.ingress_port == 5 ||
-            //          standard_metadata.ingress_port == 6 ||
-            //          standard_metadata.ingress_port == 7){
-            //          hash(meta.flow_id,
-            //  	         HashAlgorithm.crc16,
-            //  	         (bit<1>)0,
-            //  	         { hdr.ipv4.srcAddr,
-            //  	           hdr.ipv4.dstAddr,
-            //                 hdr.tcp.srcPort,
-            //                 hdr.tcp.dstPort,
-            //                 hdr.ipv4.protocol},
-            //  	         (bit<16>)1024);
-            //          if (hdr.tcp.syn == 1){
-            //              known_flows.write(meta.flow_id, 1);
-            //          }
-            //      }
-            //      if (standard_metadata.ingress_port == 1 ||
-            //          standard_metadata.ingress_port == 2 ||
-            //          standard_metadata.ingress_port == 3){
-            //          hash(meta.flow_id,
-            //  	         HashAlgorithm.crc16,
-            //  	         (bit<1>)0,
-            //  	         { hdr.ipv4.dstAddr,
-            //  	           hdr.ipv4.srcAddr,
-            //                 hdr.tcp.dstPort,
-            //                 hdr.tcp.srcPort,
-            //                 hdr.ipv4.protocol},
-            //  	         (bit<16>)1024);
-            //          known_flows.read(meta.flow_is_known, meta.flow_id);
-            //          if (meta.flow_is_known != 1){
-            //              drop();
-            //              return;
-            //          }
-            //      }
-            // }
-        }
-        smac.apply();
-        if (dmac.apply().hit){
-            //
-        }
-        else {
-            broadcast.apply();
+             if (standard_metadata.ingress_port == 4 ||
+                 standard_metadata.ingress_port == 5 ||
+                 standard_metadata.ingress_port == 6 ||
+                 standard_metadata.ingress_port == 7){
+                 //in2ext
+                 //dst ip blacklist filter
+                 blacklist_dst_ip.apply();
+                 //stateless firewall
+                 if (hdr.tcp.isValid()){
+                     hash(meta.flow_id,
+             	         HashAlgorithm.crc16,
+             	         (bit<1>)0,
+             	         { hdr.ipv4.srcAddr,
+             	           hdr.ipv4.dstAddr,
+                            hdr.tcp.srcPort,
+                            hdr.tcp.dstPort,
+                            hdr.ipv4.protocol},
+             	         (bit<16>)1024);
+                     if (hdr.tcp.syn == 1){
+                         known_flows.write(meta.flow_id, 1);
+                     }
+                 }
+             }
+             if (standard_metadata.ingress_port == 1 ||
+                 standard_metadata.ingress_port == 2 ||
+                 standard_metadata.ingress_port == 3){
+                 //ext2in
+                 //stateless firewall
+                 if (hdr.tcp.isValid()){
+                     hash(meta.flow_id,
+             	         HashAlgorithm.crc16,
+             	         (bit<1>)0,
+             	         { hdr.ipv4.dstAddr,
+             	           hdr.ipv4.srcAddr,
+                            hdr.tcp.dstPort,
+                            hdr.tcp.srcPort,
+                            hdr.ipv4.protocol},
+             	         (bit<16>)1024);
+                     known_flows.read(meta.flow_is_known, meta.flow_id);
+                     if (meta.flow_is_known != 1){
+                         //port filter, checks if traffic is for server
+                         whitelist_tcp_dst_port.apply();
+                         //TODO: what about UDP?
+                         //ip blacklist filter, checks if traffic comes from spam ip src
+                         blacklist_src_ip.apply();
+                     }
+                }else{
+                    //TODO: we receive non tcp/udp traffic.. drop
+                    //TODO: what about pinging server? should this be possible?
+                    //TODO: here we could do port knocking..
+                    //drop();
+                    //return;
+                }
+            }
+            smac.apply();
+            if (dmac.apply().hit){
+            }
+            else {
+                broadcast.apply();
+            }
         }
     }
 }
-
 /*************************************************************************
 ****************  E G R E S S   P R O C E S S I N G   *******************
 *************************************************************************/
@@ -166,7 +219,6 @@ control MyComputeChecksum(inout headers hdr, inout metadata meta) {
 /*************************************************************************
 ***********************  S W I T C H  *******************************
 *************************************************************************/
-
 //switch architecture
 V1Switch(
 MyParser(),

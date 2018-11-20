@@ -3,6 +3,9 @@ import struct
 from p4utils.utils.topology import Topology
 from p4utils.utils.sswitch_API import SimpleSwitchAPI
 from scapy.all import Ether, sniff, Packet, BitField
+import csv
+from os import path
+
 
 class CpuHeader(Packet):
     name = 'CpuPacket'
@@ -55,7 +58,7 @@ class L2Controller(object):
 
     def learn(self, learning_data):
         for mac_addr, ingress_port in  learning_data:
-            print "mac: %012X ingress_port: %s " % (mac_addr, ingress_port)
+            #print "mac: %012X ingress_port: %s " % (mac_addr, ingress_port)
             self.controller.table_add("smac", "NoAction", [str(mac_addr)])
             self.controller.table_add("dmac", "forward", [str(mac_addr)], [str(ingress_port)])
 
@@ -105,6 +108,9 @@ class RoutingController(object):
         self.connect_to_switches()
         self.reset_states()
         self.set_table_defaults()
+        self.set_whitelist_tcp_port()
+        self.set_blacklist_srcIP()
+        self.set_blacklist_dstIP()
 
     def reset_states(self):
         [controller.reset_state() for controller in self.controllers.values()]
@@ -116,7 +122,39 @@ class RoutingController(object):
 
     def set_table_defaults(self):
         for controller in self.controllers.values():
-	        a = 1 # TODO:
+            controller.table_set_default("whitelist_tcp_dst_port", "drop", [])
+            controller.table_set_default("blacklist_src_ip","NoAction",[])
+            controller.table_set_default("blacklist_dst_ip","NoAction",[])
+	        #a = 1 # TODO:
+
+    #mstaehli
+    def set_whitelist_tcp_port(self):
+        #read in txt with ports
+        file_path = path.relpath("Filters/ext2in_whitelist_tcp_dst_ports.txt")
+        with open(file_path,'r') as wPorts_f:
+            wPorts_l = wPorts_f.readlines()
+            #set all ports to no action..
+            for port in wPorts_l:
+                self.controllers['fir'].table_add("whitelist_tcp_dst_port", "NoAction", [port])
+                #print 'port {} added to white list'.format(port.replace('\n',''))
+
+    def set_blacklist_srcIP(self):
+        #read blacklist file
+        file_path = path.relpath("Filters/ext2in_blacklist_srcIP.txt")
+        with open(file_path,'r') as bIP_f:
+            bIP_l = bIP_f.readlines()
+            for ip in bIP_l:
+                self.controllers['fir'].table_add("blacklist_src_ip", "drop", [ip])
+                print 'ip {} added to black list ex2in'.format(ip.replace('\n',''))
+
+    def set_blacklist_dstIP(self):
+        #read blacklist file
+        file_path = path.relpath("Filters/in2ext_blacklist_dstIP.txt")
+        with open(file_path,'r') as bIP_f:
+            bIP_l = bIP_f.readlines()
+            for ip in bIP_l:
+                self.controllers['fir'].table_add("blacklist_dst_ip", "drop", [ip])
+                print 'ip {} added to black list in2ex'.format(ip.replace('\n',''))
 
     def main(self):
         a = 1 # TODO:
@@ -127,6 +165,8 @@ if __name__ == "__main__":
     parser.add_argument('--sw', type=str, required=False, default="s1")
     args = parser.parse_args()
 
+    controller = RoutingController().main()
+
     controller = L2Controller(args.sw).run_digest_loop()
 
-    #controller = RoutingController().main()
+
