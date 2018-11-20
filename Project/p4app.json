@@ -11,18 +11,6 @@
     {
       "cmd": "sudo python controller.py --sw fir &",
       "reboot_run": true
-    },
-    {
-      "cmd": "sudo python controller.py --sw ge1 &",
-      "reboot_run": true
-    },
-    {
-      "cmd": "sudo python controller.py --sw ge2 &",
-      "reboot_run": true
-    },
-    {
-      "cmd": "sudo python controller.py --sw ge3 &",
-      "reboot_run": true
     }
   ],
   "topo_module": {
