@@ -91,7 +91,7 @@ control MyIngress(inout headers hdr,
     //blacklist to block ip
     table blacklist_src_ip {
         key = {
-            hdr.ipv4.srcAddr: exact;
+            hdr.ipv4.srcAddr: ternary;
         }
         actions = {
             drop;
@@ -102,7 +102,7 @@ control MyIngress(inout headers hdr,
 
     table blacklist_dst_ip {
         key = {
-            hdr.ipv4.dstAddr: exact;
+            hdr.ipv4.dstAddr: range;
         }
         actions = {
             drop;

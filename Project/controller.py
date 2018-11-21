@@ -125,7 +125,7 @@ class L2Controller(object):
             bIP_l = bIP_f.readlines()
             for ip in bIP_l:
                 #self.controller.table_add("blacklist_src_ip", "drop", [str(ip)])
-                self.controller.table_add("blacklist_src_ip", "drop", ["10.0.1.1"])
+                self.controller.table_add("blacklist_src_ip", "drop", ["10.0.1.1->10.0.1.1"],[],"1")
                 #print 'ip {} added to black list ex2in'.format(ip.replace('\n',''))
 
     def set_blacklist_dstIP(self):
@@ -135,8 +135,8 @@ class L2Controller(object):
             bIP_l = bIP_f.readlines()
             for ip in bIP_l:
                 #self.controller.table_add("blacklist_dst_ip", "drop", [str(ip)])
-                self.controller.table_add("blacklist_dst_ip", "drop", ["10.0.1.1"])
-                #print 'ip {} added to black list in2ex'.format(ip.replace('\n',''))
+                self.controller.table_add("blacklist_dst_ip", "drop", ["10.0.1.1->10.0.1.1"],[],"1")
+                print 'ip {} added to black list in2ex'.format(ip.replace('\n',''))
 
 class RoutingController(object):
 
@@ -171,4 +171,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     #controller = RoutingController().main()
-    controller = L2Controller(args.sw).run_digest_loop()
+    controller = L2Controller(args.sw).run_digest_loop() #arg.sw = switch name
