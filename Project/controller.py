@@ -5,7 +5,7 @@ from p4utils.utils.sswitch_API import SimpleSwitchAPI
 from scapy.all import Ether, sniff, Packet, BitField
 from os import path
 
-
+# TODO: UNUSED at the moment
 class CpuHeader(Packet):
     name = 'CpuPacket'
     fields_desc = [BitField('macAddr',0,48), BitField('ingress_port', 0, 16)]
@@ -174,6 +174,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--sw', type=str, required=False, default="fir")
     args = parser.parse_args()
+
+
+    # INFO:
+    # Routing controller (not used at the moment)
+    # connects to all switches by default at the moment
+    # but L2Controller only connects to the provided switches
 
     #controller = RoutingController().main()
     controller = L2Controller(args.sw).run_digest_loop() #arg.sw = switch name
