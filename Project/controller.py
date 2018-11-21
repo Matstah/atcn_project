@@ -98,7 +98,8 @@ class L2Controller(object):
         while True:
             msg = sub.recv()
             self.recv_msg_digest(msg)
-
+            
+    #mstaehli
     def set_table_defaults(self):
         print '*************controller values fir:', self.sw_name
         self.controller.table_set_default("whitelist_tcp_dst_port", "drop", [])
@@ -123,9 +124,11 @@ class L2Controller(object):
         file_path = path.relpath("Filters/ext2in_blacklist_srcIP.txt")
         with open(file_path,'r') as bIP_f:
             bIP_l = bIP_f.readlines()
+            randomPrio = 1
             for ip in bIP_l:
                 #self.controller.table_add("blacklist_src_ip", "drop", [str(ip)])
-                self.controller.table_add("blacklist_src_ip", "drop", ["10.0.1.1->10.0.1.1"],[],"1")
+                self.controller.table_add("blacklist_src_ip", "drop", [str(ip)],[],str(randomPrio))
+                randomPrio += 1
                 #print 'ip {} added to black list ex2in'.format(ip.replace('\n',''))
 
     def set_blacklist_dstIP(self):
@@ -133,10 +136,12 @@ class L2Controller(object):
         file_path = path.relpath("Filters/in2ext_blacklist_dstIP.txt")
         with open(file_path,'r') as bIP_f:
             bIP_l = bIP_f.readlines()
+            randomPrio = 1
             for ip in bIP_l:
                 #self.controller.table_add("blacklist_dst_ip", "drop", [str(ip)])
-                self.controller.table_add("blacklist_dst_ip", "drop", ["10.0.1.1->10.0.1.1"],[],"1")
-                print 'ip {} added to black list in2ex'.format(ip.replace('\n',''))
+                self.controller.table_add("blacklist_dst_ip", "drop", [str(ip)],[],str(randomPrio))
+                randomPrio += 1
+                #print 'ip {} added to black list in2ex'.format(ip.replace('\n',''))
 
 class RoutingController(object):
 

@@ -91,7 +91,7 @@ control MyIngress(inout headers hdr,
     //blacklist to block ip
     table blacklist_src_ip {
         key = {
-            hdr.ipv4.srcAddr: ternary;
+            hdr.ipv4.srcAddr: range;
         }
         actions = {
             drop;
