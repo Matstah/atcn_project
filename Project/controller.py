@@ -98,7 +98,7 @@ class L2Controller(object):
         while True:
             msg = sub.recv()
             self.recv_msg_digest(msg)
-            
+
     #mstaehli
     def set_table_defaults(self):
         print '*************controller values fir:', self.sw_name
@@ -172,7 +172,7 @@ class RoutingController(object):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--sw', type=str, required=False, default="s1")
+    parser.add_argument('--sw', type=str, required=False, default="fir")
     args = parser.parse_args()
 
     #controller = RoutingController().main()

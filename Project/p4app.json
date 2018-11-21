@@ -31,7 +31,7 @@
   },
   "topology": {
     "assignment_strategy": "mixed",
-    "auto_arp_tables": false,
+    "auto_arp_tables": true,
     "links": [
       ["he1", "ge1"], ["he2", "ge2"], ["he3", "ge3"],
       ["ge1", "fir"], ["ge2", "fir"], ["ge3", "fir"],
@@ -55,7 +55,7 @@
       }
     },
     "switches": {
-      "fir": {},
+      "fir": {"program": "p4src/project.p4"},
       "ge1": {"program": "p4external/external_gateway.p4"},
       "ge2": {"program": "p4external/external_gateway.p4"},
       "ge3": {"program": "p4external/external_gateway.p4"}
