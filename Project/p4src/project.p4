@@ -58,13 +58,13 @@ control MyIngress(inout headers hdr,
 
     table dst_direction {
         key = {
-            hdr.ethernet.dstAddr: exact;
+            hdr.ipv4.dstAddr: lpm;
         }
         actions = {
             set_outgoing_meta;
             set_goes_out;
         }
-        size = 8;
+        size = 1;
         default_action = set_goes_out;
     }
 

@@ -147,15 +147,16 @@ class L2Controller(object):
 
     #phfriedl
     def set_direction_tables(self):
+        # outgoing traffic decided on our ip subnet
+        internal_subnet = '10.0.4.0/24'
+        self.controller.table_add("dst_direction", "set_outgoing_meta", [str(internal_subnet)], ["1"])
+
         # incoming traffic by port
-        # outgoing traffic by mac # TODO: does it work like this?...
         for host in self.topo.get_hosts_connected_to(self.sw_name):
             port = self.topo.node_to_node_port_num(self.sw_name, host)
-            mac = self.topo.get_host_mac(host)
             internal = None
             if(re.match(r"hi|ser", host)):
                 internal = "1"
-                self.controller.table_add("dst_direction", "set_outgoing_meta", [str(mac)], ["1"])
             else:
                 internal = "0"
             self.controller.table_add("src_direction", "set_incoming_meta", [str(port)], [internal])
