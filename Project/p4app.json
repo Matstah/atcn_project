@@ -34,9 +34,10 @@
     "auto_arp_tables": true,
     "links": [
       ["he1", "ge1"], ["he2", "ge2"], ["he3", "ge3"],
-      ["ge1", "fir"], ["ge2", "fir"], ["ge3", "fir"],
-      ["hi1", "fir"], ["hi2", "fir"], ["hi3", "fir"],
-      ["ser", "fir"]
+      ["ge1", "ext"], ["ge2", "ext"], ["ge3", "ext"],
+      ["ext", "fir"], ["int", "fir"],
+      ["hi1", "int"], ["hi2", "int"], ["hi3", "int"],
+      ["ser", "int"]
     ],
     "hosts": {
       "he1": {
@@ -56,9 +57,11 @@
     },
     "switches": {
       "fir": {"program": "p4src/project.p4"},
-      "ge1": {"program": "p4external/external_gateway.p4"},
-      "ge2": {"program": "p4external/external_gateway.p4"},
-      "ge3": {"program": "p4external/external_gateway.p4"}
+      "ge1": {"program": "p4repeat/repeater.p4"},
+      "ge2": {"program": "p4repeat/repeater.p4"},
+      "ge3": {"program": "p4repeat/repeater.p4"},
+      "ext": {"program": "p4repeat/repeater.p4"},
+      "int": {"program": "p4repeat/repeater.p4"}
     }
   }
 }

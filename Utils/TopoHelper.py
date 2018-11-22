@@ -19,35 +19,37 @@ RE_TO_COMPONENT = {
     r"he": 'external_hosts',
     r"ser": 'servers',
     r"ge": 'external_gateways',
-    r"gi": 'internal_gateways'
+    r"gi": 'internal_gateways',
+    r"ext": 'extern_switch',
+    r"int": 'intern_switch'
 }
 COMPONENT_TO_PARAMS = {
     'external_hosts': {
-        'x': -2,
+        'x': -3,
         'shape': 's',
         'color': 'b',
         'size': STANDARD_NODE_SIZE*HOST_NODE_SIZE_FACTOR
     },
     'internal_hosts': {
-        'x': 2,
+        'x': 3,
         'shape': 's',
         'color': 'g',
         'size': STANDARD_NODE_SIZE*HOST_NODE_SIZE_FACTOR
     },
     'external_gateways': {
-        'x': -1,
+        'x': -2,
         'shape': 'd',
         'color': 'b',
         'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
     },
     'internal_gateways' : {
-        'x': 1,
+        'x': 2,
         'shape': 'd',
         'color': 'b',
         'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
     },
     'servers': {
-        'x': 2,
+        'x': 3,
         'shape': 's',
         'color': 'y',
         'size': 800
@@ -57,7 +59,19 @@ COMPONENT_TO_PARAMS = {
         'shape': 'd',
         'color': 'r',
         'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
-    }
+    },
+    'intern_switch' : {
+        'x': 1,
+        'shape': 'd',
+        'color': 'b',
+        'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
+    },
+    'extern_switch' : {
+        'x': -1,
+        'shape': 'd',
+        'color': 'b',
+        'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
+    },
 }
 
 # HELPERS
