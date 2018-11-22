@@ -6,6 +6,9 @@
 #include "include/headers.p4"
 #include "include/parsers.p4"
 
+#define TIMESTAMP_WIDTH 48
+#define TIMEOUT 3000
+
 
 /*************************************************************************
 ************   C H E C K S U M    V E R I F I C A T I O N   *************
@@ -24,6 +27,7 @@ control MyIngress(inout headers hdr,
                   inout standard_metadata_t standard_metadata) {
 
     register<bit<1>>(4096) known_flows;
+    register<bit<TIMESTAMP_WIDTH>>(4096) time_stamps;
 
     action drop() {
         mark_to_drop();
@@ -131,9 +135,14 @@ control MyIngress(inout headers hdr,
 	    //      { hdr.ipv4.srcAddr,
 	    //        hdr.ipv4.dstAddr,
         //        hdr.tcp.srcPort,
-        //        hdr.tcp.dstPort,
+        //        hdr.tcp   .dstPort,
         //        hdr.ipv4.protocol},
 	    //      (bit<16>)1024);
+        // TODO: set known flows back to 0 after either the close flag or a timeout
+        // TODO: make time capture register for outgoing flows
+        // TODO: UDP timeout? what for UDP streams over longer time? should timeout be extended for every UDP packet?
+        //       possible maliciousness?
+        // TODO: calculate how big the chance for false positives is for the hashes (in slides) - need an explanation why size of register is used ("...want a fpr lower than 1%...")
          if (hdr.ipv4.isValid()){
              if (standard_metadata.ingress_port == 4 ||
                  standard_metadata.ingress_port == 5 ||
@@ -156,7 +165,11 @@ control MyIngress(inout headers hdr,
                             hdr.ipv4.protocol},
              	         (bit<16>)1024);
                      if (hdr.tcp.syn == 1){
+                         time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT)
                          known_flows.write(meta.flow_id, 1);
+                     } else if (hdr.tcp.fin == 1){
+                         known_flows.write(meta.flow_id, 0);
+                         time_stamps.write(meta.flow_id, 0);
                      }
                  }
              }
@@ -176,12 +189,19 @@ control MyIngress(inout headers hdr,
                             hdr.ipv4.protocol},
              	         (bit<16>)1024);
                      known_flows.read(meta.flow_is_known, meta.flow_id);
+                     time_stamps.read(meta.max_time, meta.flow_id
                      if (meta.flow_is_known != 1){
                          //port filter, checks if traffic is for server
                          if(whitelist_tcp_dst_port.apply().hit){
                              return;
                          }
                          //TODO: what about UDP?
+                     }
+                     if(meta.max_time < standard_metadata.ingress_global_timestamp){
+                         known_flows.write(meta.flow_id, 0)
+                         time_stamps.write(meta.flow_id, 0)
+                     } else {
+                         time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT)
                      }
                 }else{
                     //TODO: we receive non tcp/udp traffic.. drop
