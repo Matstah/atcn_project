@@ -4,6 +4,7 @@ from p4utils.utils.topology import Topology
 from p4utils.utils.sswitch_API import SimpleSwitchAPI
 from scapy.all import Ether, sniff, Packet, BitField
 from os import path
+import re
 
 # TODO: UNUSED at the moment
 class CpuHeader(Packet):
@@ -28,6 +29,7 @@ class L2Controller(object):
         self.set_whitelist_tcp_port()
         self.set_blacklist_srcIP()
         self.set_blacklist_dstIP()
+        self.set_direction_tables()
 
     def add_boadcast_groups(self):
 
@@ -142,6 +144,23 @@ class L2Controller(object):
                 self.controller.table_add("blacklist_dst_ip", "drop", [str(ip)],[],str(randomPrio))
                 randomPrio += 1
                 #print 'ip {} added to black list in2ex'.format(ip.replace('\n',''))
+
+    #phfriedl
+    def set_direction_tables(self):
+        # incoming traffic by port
+        # outgoing traffic by mac # TODO: does it work like this?...
+        for host in self.topo.get_hosts_connected_to(self.sw_name):
+            port = self.topo.node_to_node_port_num(self.sw_name, host)
+            mac = self.topo.get_host_mac(host)
+            internal = None
+            if(re.match(r"hi|ser", host)):
+                internal = "1"
+                self.controller.table_add("dst_direction", "set_outgoing_meta", [str(mac)], ["1"])
+            else:
+                internal = "0"
+            self.controller.table_add("src_direction", "set_incoming_meta", [str(port)], [internal])
+
+
 
 class RoutingController(object):
 

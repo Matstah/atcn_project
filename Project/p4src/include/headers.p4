@@ -59,10 +59,16 @@ struct learn_t {
 
 }
 
+struct direction_t {
+    bit<1> is_internal_src;
+    bit<1> is_internal_dst;
+}
+
 struct metadata {
     bit<32> flow_id; // TODO: check bit length
     bit<1> flow_is_known;
     learn_t learn;
+    direction_t direction;
 }
 
 struct headers {

@@ -29,6 +29,47 @@ control MyIngress(inout headers hdr,
         mark_to_drop();
     }
 
+    // DIRECTION
+    // actions
+    action set_incoming_meta(bit<1> from_internal) {
+        meta.direction.is_internal_src = from_internal;
+    }
+
+    action set_outgoing_meta(bit<1> to_internal) {
+        meta.direction.is_internal_dst = to_internal;
+    }
+
+    action set_goes_out() {
+        meta.direction.is_internal_dst = 0;
+    }
+
+    // tables
+    table src_direction {
+        key = {
+            standard_metadata.ingress_port: exact;
+        }
+        actions = {
+            NoAction;
+            set_incoming_meta;
+        }
+        size = 8;
+        default_action = NoAction;
+    }
+
+    table dst_direction {
+        key = {
+            hdr.ethernet.dstAddr: exact;
+        }
+        actions = {
+            set_outgoing_meta;
+            set_goes_out;
+        }
+        size = 8;
+        default_action = set_goes_out;
+    }
+
+    // DIRECTION END
+
     // L2 LEARNING
     action mac_learn(){
         meta.learn.srcAddr = hdr.ethernet.srcAddr;
@@ -87,7 +128,7 @@ control MyIngress(inout headers hdr,
     }
     // END: L2 LEARNING
 
-//BLACK and WHITE lists
+    //BLACK and WHITE lists
     //blacklist to block ip
     table blacklist_src_ip {
         key = {
@@ -122,98 +163,21 @@ control MyIngress(inout headers hdr,
         }
         size = 255; //16bit for ports.., but only a few to allow
     }
-//END BLACK and WHITE lists
+    //END BLACK and WHITE lists
 
     apply {
-        // hash(meta.flow_id,
-	    //      HashAlgorithm.crc16,
-	    //      (bit<1>)0,
-	    //      { hdr.ipv4.srcAddr,
-	    //        hdr.ipv4.dstAddr,
-        //        hdr.tcp.srcPort,
-        //        hdr.tcp.dstPort,
-        //        hdr.ipv4.protocol},
-	    //      (bit<16>)1024);
-         if (hdr.ipv4.isValid()){
-             /* TODO ??
-             // enable traffic with server for everybody for now
-             // for testing should be reachable (at least for the moment)
-             if (standard_metadata.ingress_port == 7) {
-                 // simple routing behaviour..?
-             }
-             */
-             if (
-                 standard_metadata.ingress_port == 4 ||
-                 standard_metadata.ingress_port == 5 ||
-                 standard_metadata.ingress_port == 6 ||
-                 standard_metadata.ingress_port == 7
-                 ){
-                 //in2ext TODO what about in2in
-                 //dst ip blacklist filter
-                 if(blacklist_dst_ip.apply().hit){
-                     return; //why does it only block that way and not with drop??
-                 }
-                 //stateless firewall
-                 if (hdr.tcp.isValid()){
-                     hash(meta.flow_id,
-             	         HashAlgorithm.crc16,
-             	         (bit<1>)0,
-             	         { hdr.ipv4.srcAddr,
-             	           hdr.ipv4.dstAddr,
-                            hdr.tcp.srcPort,
-                            hdr.tcp.dstPort,
-                            hdr.ipv4.protocol},
-             	         (bit<16>)1024);
-                     if (hdr.tcp.syn == 1){
-                         known_flows.write(meta.flow_id, 1);
-                     }
-                 }
-             }
-             else if ( // TODO changed to else if
-                 standard_metadata.ingress_port == 1 ||
-                 standard_metadata.ingress_port == 2 ||
-                 standard_metadata.ingress_port == 3
-                 ){
-                 //ext2in TODO not necessairily!! what about ext2ext?!
-                 //stateless firewall
-                 if (hdr.tcp.isValid()){
-                     hash(meta.flow_id,
-             	         HashAlgorithm.crc16,
-             	         (bit<1>)0,
-             	         { hdr.ipv4.dstAddr,
-             	           hdr.ipv4.srcAddr,
-                            hdr.tcp.dstPort,
-                            hdr.tcp.srcPort,
-                            hdr.ipv4.protocol},
-             	         (bit<16>)1024);
-                     known_flows.read(meta.flow_is_known, meta.flow_id);
-                     if (meta.flow_is_known != 1){
-                         //port filter, checks if traffic is for server
-                         if(whitelist_tcp_dst_port.apply().hit){
-                             return;
-                         }
-                         //TODO: what about UDP?
-                     }
-                }else{
-                    //TODO: we receive non tcp/udp traffic.. drop
-                    //TODO: what about pinging server? should this be possible?
-                    //TODO: here we could do port knocking..
-                    //drop();
-                    //return;
-
-                }
-                //ip blacklist filter, checks if traffic comes from spam ip src
-                if(blacklist_src_ip.apply().hit){
-                    return;
-                }
+        // determine flow direction
+        switch (src_direction.apply().action_run){
+            NoAction: {
+                set_incoming_meta(0);
             }
-
-            smac.apply();
-            if (dmac.apply().hit){
-            }
-            else {
-                broadcast.apply();
-            }
+        }
+        dst_direction.apply();
+        smac.apply();
+        if (dmac.apply().hit){
+        }
+        else {
+            broadcast.apply();
         }
     }
 }
