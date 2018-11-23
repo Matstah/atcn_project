@@ -11,10 +11,6 @@
     {
       "cmd": "sudo python firewall_controller.py --sw fir &",
       "reboot_run": true
-    },
-    {
-      "cmd": "sudo python gate_controller.py &",
-      "reboot_run": true
     }
   ],
   "topo_module": {
@@ -38,10 +34,9 @@
     "auto_arp_tables": true,
     "links": [
       ["he1", "ge1"], ["he2", "ge2"], ["he3", "ge3"],
-      ["ge1", "ext"], ["ge2", "ext"], ["ge3", "ext"],
-      ["ext", "fir"], ["int", "fir"],
-      ["hi1", "int"], ["hi2", "int"], ["hi3", "int"],
-      ["ser", "int"]
+      ["ge1", "fir"], ["ge2", "fir"], ["ge3", "fir"],
+      ["hi1", "fir"], ["hi2", "fir"], ["hi3", "fir"],
+      ["ser", "fir"]
     ],
     "hosts": {
       "he1": {
@@ -63,9 +58,7 @@
       "fir": {"program": "p4src/firewall.p4"},
       "ge1": {"program": "p4other/repeater.p4"},
       "ge2": {"program": "p4other/repeater.p4"},
-      "ge3": {"program": "p4other/repeater.p4"},
-      "ext": {"program": "p4other/gate.p4"},
-      "int": {"program": "p4other/gate.p4"}
+      "ge3": {"program": "p4other/repeater.p4"}
     }
   }
 }

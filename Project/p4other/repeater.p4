@@ -1,9 +1,14 @@
 /* -*- P4_16 -*- */
 
 /*COPIED FROM EXERCISE 02-Repeater*/
+/* and expanded to change ethernet header */
 
 #include <core.p4>
 #include <v1model.p4>
+
+typedef bit<48> macAddr_t;
+const macAddr_t SWITCH_MAC = 0x00010a000201;
+const macAddr_t HOST_MAC = 0x00000a000201;
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
@@ -12,7 +17,14 @@
 struct metadata {
 }
 
+header ethernet_t {
+    macAddr_t dstAddr;
+    macAddr_t srcAddr;
+    bit<16>   etherType;
+}
+
 struct headers {
+    ethernet_t ethernet;
 }
 
 /*************************************************************************
@@ -24,9 +36,14 @@ parser MyParser(packet_in packet,
                 inout metadata meta,
                 inout standard_metadata_t standard_metadata) {
 
-      state start{
-          transition accept;
-      }
+    state start {
+        transition parse_ethernet;
+    }
+
+    state parse_ethernet {
+        packet.extract(hdr.ethernet);
+        transition accept;
+    }
 }
 
 /*************************************************************************
@@ -49,13 +66,17 @@ control MyIngress(inout headers hdr,
     apply {
 
         // If input port is 1 => output port 2
+        // this is towards the network, so we do not care about the MAC addresses
         if (standard_metadata.ingress_port == 1){
             standard_metadata.egress_spec = 2;
         }
 
         // If input port is 2 => output port 1
+        // This is towards the host, so we have to change the mac addresses
         else if (standard_metadata.ingress_port == 2){
             standard_metadata.egress_spec = 1;
+            hdr.ethernet.srcAddr = SWITCH_MAC;
+            hdr.ethernet.dstAddr = HOST_MAC;
         }
     }
 }
@@ -84,9 +105,7 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
-
-    /* Deparser not needed */
-
+        packet.emit(hdr.ethernet);
     }
 }
 
