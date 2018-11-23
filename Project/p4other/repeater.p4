@@ -7,8 +7,9 @@
 #include <v1model.p4>
 
 typedef bit<48> macAddr_t;
-const macAddr_t SWITCH_MAC = 0x00010a000201;
-const macAddr_t HOST_MAC = 0x00000a000201;
+typedef bit<9> port_t;
+const macAddr_t SWITCH_MAC = 0x00010a000101;
+const macAddr_t HOST_MAC = 0x00000a000101;
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
@@ -63,21 +64,10 @@ control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
 
+    #include "ingress/mac_translation.p4"
+
     apply {
-
-        // If input port is 1 => output port 2
-        // this is towards the network, so we do not care about the MAC addresses
-        if (standard_metadata.ingress_port == 1){
-            standard_metadata.egress_spec = 2;
-        }
-
-        // If input port is 2 => output port 1
-        // This is towards the host, so we have to change the mac addresses
-        else if (standard_metadata.ingress_port == 2){
-            standard_metadata.egress_spec = 1;
-            hdr.ethernet.srcAddr = SWITCH_MAC;
-            hdr.ethernet.dstAddr = HOST_MAC;
-        }
+        #include "ingress/apply.p4"
     }
 }
 
