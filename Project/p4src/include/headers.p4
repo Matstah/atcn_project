@@ -9,6 +9,9 @@ typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
 
+#define SIZE_KNOCK_SEQ 4
+
+
 
 header ethernet_t {
     macAddr_t dstAddr;
@@ -55,15 +58,13 @@ header tcp_t{
 header udp_t{
     bit<16> srcPort;
     bit<16> dstPort;
-    bit<16> length;
+    bit<16> packet_length;
     bit<16> checksum;
 }
 
 struct learn_t {
-
     bit<48> srcAddr;
     bit<9>  ingress_port;
-
 }
 
 struct metadata {
@@ -73,7 +74,7 @@ struct metadata {
 
     bit<8> knock_id;
     bit<32> knock_slot;
-    bit<16> knock_next;
+    bit<SIZE_KNOCK_SEQ> knock_next;
     bit<48> knock_timestamp;
 }
 

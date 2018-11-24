@@ -37,7 +37,7 @@ parser MyParser(packet_in packet,
     }
 
     state parse_udp {
-        packet.extract(hdr.upd);
+        packet.extract(hdr.udp);
         transition accept;
     }
 }
@@ -54,6 +54,7 @@ control MyDeparser(packet_out packet, in headers hdr) {
         packet.emit(hdr.ipv4);
 
         //Only emited if valid
+        packet.emit(hdr.udp);
         packet.emit(hdr.tcp);
     }
 }
