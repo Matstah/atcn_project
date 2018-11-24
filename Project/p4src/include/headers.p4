@@ -52,6 +52,13 @@ header tcp_t{
     bit<16> urgentPtr;
 }
 
+header udp_t{
+    bit<16> srcPort;
+    bit<16> dstPort;
+    bit<16> length;
+    bit<16> checksum;
+}
+
 struct learn_t {
 
     bit<48> srcAddr;
@@ -63,10 +70,16 @@ struct metadata {
     bit<32> flow_id; // TODO: check bit length
     bit<1> flow_is_known;
     learn_t learn;
+
+    bit<8> knock_id;
+    bit<32> knock_slot;
+    bit<16> knock_next;
+    bit<48> knock_timestamp;
 }
 
 struct headers {
     ethernet_t   ethernet;
     ipv4_t       ipv4;
     tcp_t        tcp;
+    udp_t        udp;
 }

@@ -23,11 +23,15 @@ control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
 
+
     register<bit<1>>(4096) known_flows;
 
     action drop() {
         mark_to_drop();
     }
+
+#include "include/filters.p4" //black and white list filters
+#include "include/port_knocking.p4" //port knocking stuff
 
     // L2 LEARNING
     action mac_learn(){
@@ -87,43 +91,6 @@ control MyIngress(inout headers hdr,
     }
     // END: L2 LEARNING
 
-//BLACK and WHITE lists
-    //blacklist to block ip
-    table blacklist_src_ip {
-        key = {
-            hdr.ipv4.srcAddr: range;
-        }
-        actions = {
-            drop;
-            NoAction;
-        }
-        size = 65536; //2^16
-    }
-
-    table blacklist_dst_ip {
-        key = {
-            hdr.ipv4.dstAddr: range;
-        }
-        actions = {
-            drop;
-            NoAction;
-        }
-        size = 65536; //2^16
-    }
-
-    //port white list
-    table whitelist_tcp_dst_port{
-        key = {
-            hdr.tcp.dstPort: exact;
-        }
-        actions = {
-            drop;
-            NoAction;
-        }
-        size = 255; //16bit for ports.., but only a few to allow
-    }
-//END BLACK and WHITE lists
-
     apply {
         // hash(meta.flow_id,
 	    //      HashAlgorithm.crc16,
@@ -176,7 +143,10 @@ control MyIngress(inout headers hdr,
                  ){
                  //ext2in TODO not necessairily!! what about ext2ext?!
                  //stateless firewall
-                 if (hdr.tcp.isValid()){
+                 if(hdr.udp.isValid()){
+
+                 }
+                 else if (hdr.tcp.isValid()){
                      hash(meta.flow_id,
              	         HashAlgorithm.crc16,
              	         (bit<1>)0,

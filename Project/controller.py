@@ -24,10 +24,7 @@ class L2Controller(object):
 
         self.controller.reset_state()
         self.add_boadcast_groups()
-        self.set_table_defaults()
-        self.set_whitelist_tcp_port()
-        self.set_blacklist_srcIP()
-        self.set_blacklist_dstIP()
+        filters = Filters(self.controller, self.sw_name);
 
     def add_boadcast_groups(self):
 
@@ -98,6 +95,16 @@ class L2Controller(object):
         while True:
             msg = sub.recv()
             self.recv_msg_digest(msg)
+
+class Filters:
+
+    def __init__(self, controller,sw_name):
+        self.sw_name = sw_name
+        self.controller = controller
+        self.set_table_defaults()
+        self.set_blacklist_srcIP()
+        self.set_blacklist_dstIP()
+
 
     #mstaehli
     def set_table_defaults(self):
