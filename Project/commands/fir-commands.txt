@@ -1,0 +1,23 @@
+mc_mgrp_create 1
+mc_mgrp_create 2
+mc_mgrp_create 3
+
+mc_mgrp_create 11
+mc_mgrp_create 12
+mc_mgrp_create 13
+
+mc_node_create 0 5 6
+mc_node_create 0 4 6
+mc_node_create 0 4 5
+
+mc_node_create 0 4 5 6
+mc_node_create 0 4 5 6 7
+mc_node_create 1 2 3
+
+mc_node_associate 1  0
+mc_node_associate 2  1
+mc_node_associate 3  2
+
+mc_node_associate 11 3
+mc_node_associate 12 4
+mc_node_associate 13 5

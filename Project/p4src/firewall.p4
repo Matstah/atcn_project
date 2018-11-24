@@ -29,16 +29,10 @@ control MyIngress(inout headers hdr,
         mark_to_drop();
     }
 
-    apply {
-        // If input port is 1 => output port 2
-        if (standard_metadata.ingress_port == 1){
-            standard_metadata.egress_spec = 2;
-        }
+    #include "ingress/ip_forwarding.p4"
 
-        // If input port is 2 => output port 1
-        else if (standard_metadata.ingress_port == 2){
-            standard_metadata.egress_spec = 1;
-        }
+    apply {
+        #include "ingress/apply.p4"
     }
 }
 /*************************************************************************
