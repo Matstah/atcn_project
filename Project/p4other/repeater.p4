@@ -8,8 +8,6 @@
 
 typedef bit<48> macAddr_t;
 typedef bit<9> port_t;
-const macAddr_t SWITCH_MAC = 0x00010a000101;
-const macAddr_t HOST_MAC = 0x00000a000101;
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************

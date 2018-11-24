@@ -56,9 +56,9 @@
     },
     "switches": {
       "fir": {"program": "p4src/firewall.p4"},
-      "ge1": {"program": "p4other/repeater.p4"},
-      "ge2": {"program": "p4other/repeater.p4"},
-      "ge3": {"program": "p4other/repeater.p4"}
+      "ge1": {"program": "p4other/repeater.p4", "cli_input": "commands/ge1-commands.txt"},
+      "ge2": {"program": "p4other/repeater.p4", "cli_input": "commands/ge2-commands.txt"},
+      "ge3": {"program": "p4other/repeater.p4", "cli_input": "commands/ge3-commands.txt"}
     }
   }
 }
