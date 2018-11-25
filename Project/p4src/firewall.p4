@@ -3,6 +3,7 @@
 #include <v1model.p4>
 
 //My includes
+#include "include/definitions.p4"
 #include "include/headers.p4"
 #include "include/parsers.p4"
 

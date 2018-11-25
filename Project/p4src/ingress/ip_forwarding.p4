@@ -1,24 +1,12 @@
 // tables and actions
-
-action forward(){
-    // If input port is 1 => output port 2
-    // this is towards the network, so we do not care about the MAC addresses
-    if (standard_metadata.ingress_port == 1){
-        standard_metadata.egress_spec = 2;
-    }
-
-    // If input port is 2 => output port 1
-    // This is towards the host, so we have to change the mac addresses
-    else if (standard_metadata.ingress_port == 2){
-        standard_metadata.egress_spec = 1;
-    }
-
-}
-
-action set_mac(macAddr_t src, macAddr_t dst){
-    repeat();
+action forward_internal(port_t port, macAddr_t src, macAddr_t dst){
+    standard_metadata.egress_spec = port;
     hdr.ethernet.srcAddr = src;
     hdr.ethernet.dstAddr = dst;
+}
+
+action forward_external(port_t port) {
+    standard_metadata.egress_spec = port;
 }
 
 table ip_forwarding {
@@ -26,8 +14,10 @@ table ip_forwarding {
         hdr.ipv4.dstAddr: lpm;
     }
     actions = {
-        internal_forward;
+        forward_internal;
+        forward_external;
+        drop;
     }
-    size = 4;
+    size = 7;
     default_action = drop;
 }

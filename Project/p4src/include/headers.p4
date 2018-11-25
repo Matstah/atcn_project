@@ -1,15 +1,6 @@
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
-
-const bit<16> TYPE_IPV4 = 0x800;
-const bit<16> TYPE_BROADCAST = 0x1234;
-
-typedef bit<9>  egressSpec_t;
-typedef bit<48> macAddr_t;
-typedef bit<32> ip4Addr_t;
-
-
 header ethernet_t {
     macAddr_t dstAddr;
     macAddr_t srcAddr;
@@ -52,17 +43,7 @@ header tcp_t{
     bit<16> urgentPtr;
 }
 
-struct learn_t {
-
-    bit<48> srcAddr;
-    bit<9>  ingress_port;
-
-}
-
 struct metadata {
-    bit<32> flow_id; // TODO: check bit length
-    bit<1> flow_is_known;
-    learn_t learn;
 }
 
 struct headers {
