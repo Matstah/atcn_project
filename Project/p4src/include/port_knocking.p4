@@ -61,57 +61,65 @@ action port_rule(bit<48> delta_time, bit<SIZE_KNOCK_SEQ> sequence_number, bit<SI
     //read register to get state values from knock_id
     read_knock_slot();
 
+    //set variables to meta
+    meta.delta_time = delta_time;
+    meta.sequence_number = sequence_number;
+    meta.total_knocks = total_knocks;
+
+//INFO: i took this out because action does not take conditions..
+
+
     //check slot status
-    if(0 == meta.knock_slot){ // slot is free
-        if(1 == sequence_number){ // src knocks on first port
-            start_knock_state();
-        }else{}//do nothing, src knocked on wrong port and does not own a slot
-
-    }else if(meta.knock_slot == hdr.ipv4.srcAddr){ // slot is occupied by this src
-        if(1 == sequence_number){
-            start_knock_state();
-
-        }else if(sequence_number == meta.knock_next){
-            //knocking sequence is korrect
-            bit<48> time_diff = standard_metadata.ingress_global_timestamp - meta.knock_timestamp;
-            if(time_diff < delta_time){
-                //knock in expected time range
-                if(sequence_number < total_knocks){
-                    //not final port, expect next node
-                    set2next_knock_state();
-                }else{
-                    //knocked final port-> tell controller to activate vpn
-                    //let_knocker_pass();
-                    delete_knock_state();
-                }
-            }else{
-                //knock timeout
-                delete_knock_state();
-            }
-        }else{
-            //knocking sequense is false
-            delete_knock_state();
-        }
-    }else{ //(meta.knock_slot != srcIP) slot is occupied by other source
-        //check if other slot has timed out.
-        bit<48> time_diff = standard_metadata.ingress_global_timestamp - meta.knock_timestamp;
-        if(time_diff < delta_time){
-            if(1 == sequence_number){
-                //src takes over state
-                start_knock_state();
-            }else{
-                delete_knock_state();
-            }
-        }else{} //do Nothing, state is occupied by valid other src
-    }
+//    if(0 == meta.knock_slot){ // slot is free
+//        if(1 == sequence_number){ // src knocks on first port
+//            start_knock_state();
+//        }else{}//do nothing, src knocked on wrong port and does not own a slot
+//
+//    }else if(meta.knock_slot == hdr.ipv4.srcAddr){ // slot is occupied by this src
+//        if(1 == sequence_number){
+//            start_knock_state();
+//
+//        }else if(sequence_number == meta.knock_next){
+//            //knocking sequence is korrect
+//            bit<48> time_diff = standard_metadata.ingress_global_timestamp - meta.knock_timestamp;
+//            if(time_diff < delta_time){
+//                //knock in expected time range
+//                if(sequence_number < total_knocks){
+//                    //not final port, expect next node
+//                    set2next_knock_state();
+//                }else{
+//                    //knocked final port-> tell controller to activate vpn
+//                    //let_knocker_pass();
+//                    delete_knock_state();
+//                }
+//            }else{
+//                //knock timeout
+//                delete_knock_state();
+//            }
+//        }else{
+//            //knocking sequense is false
+//            delete_knock_state();
+//        }
+//    }else{ //(meta.knock_slot != srcIP) slot is occupied by other source
+//        //check if other slot has timed out.
+//        bit<48> time_diff = standard_metadata.ingress_global_timestamp - meta.knock_timestamp;
+//        if(time_diff < delta_time){
+//            if(1 == sequence_number){
+//                //src takes over state
+//                start_knock_state();
+//            }else{
+//                delete_knock_state();
+//            }
+//        }else{} //do Nothing, state is occupied by valid other src
+//    }
 }
 
 action out_of_order_knock(){
     get_knock_id();
     reg_knocking_srcIP.read(meta.knock_slot, (bit<32>)meta.knock_id);
-    if(meta.knock_slot == hdr.ipv4.srcAddr){
-        delete_knock_state();
-    }else{} //don't care, as srcIP does not have a slot(not knocking..)
+//    if(meta.knock_slot == hdr.ipv4.srcAddr){
+//        delete_knock_state();
+//    }else{} //don't care, as srcIP does not have a slot(not knocking..)
 }
 
 

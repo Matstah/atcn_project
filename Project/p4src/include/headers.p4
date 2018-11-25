@@ -76,6 +76,9 @@ struct metadata {
     bit<32> knock_slot;
     bit<SIZE_KNOCK_SEQ> knock_next;
     bit<48> knock_timestamp;
+    bit<48> delta_time;
+    bit<SIZE_KNOCK_SEQ> sequence_number;
+    bit<SIZE_KNOCK_SEQ> total_knocks;
 }
 
 struct headers {
