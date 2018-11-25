@@ -22,7 +22,7 @@ class Controller(object):
 
     def run(self):
         script = path.basename(__file__)
-        print('{}: Controller.run()'.format(script))
+        print('{}: Controller.run() called on {}'.format(script, self.sw_name))
         # while True:
         #     print('{} is running'.format(script))
         #     time.sleep(5)

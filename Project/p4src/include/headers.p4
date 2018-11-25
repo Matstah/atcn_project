@@ -5,7 +5,7 @@ header ethernet_t {
     macAddr_t dstAddr;
     macAddr_t srcAddr;
     bit<16>   etherType;
-}
+} // 14 Bytes
 
 header ipv4_t {
     bit<4>    version;
@@ -21,7 +21,7 @@ header ipv4_t {
     bit<16>   hdrChecksum;
     ip4Addr_t srcAddr;
     ip4Addr_t dstAddr;
-}
+} // 20 Bytes
 
 header tcp_t{
     bit<16> srcPort;
@@ -41,13 +41,21 @@ header tcp_t{
     bit<16> window;
     bit<16> checksum;
     bit<16> urgentPtr;
-}
+} // 20 Bytes
+
+header dpi_t { // DPI
+    bit<32> srcAddr;
+    bit<16> ingress_port;
+} // 6 Bytes
 
 struct metadata {
+    port_t ingress_port; // DPI, because cloning resets all metadata
 }
 
 struct headers {
     ethernet_t   ethernet;
     ipv4_t       ipv4;
     tcp_t        tcp;
+
+    dpi_t dpi; // DPI
 }

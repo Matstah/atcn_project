@@ -9,7 +9,7 @@
   "enable_log": true,
   "exec_scripts": [
     {
-      "cmd": "sudo python firewall_controller.py --sw fir &",
+      "cmd": "sudo python controller/firewall_controller.py --sw fir &",
       "reboot_run": true
     }
   ],
@@ -55,10 +55,23 @@
       }
     },
     "switches": {
-      "fir": {"program": "p4src/firewall.p4", "cli_input": "commands/fir-commands.txt"},
-      "ge1": {"program": "p4other/repeater.p4", "cli_input": "commands/ge1-commands.txt"},
-      "ge2": {"program": "p4other/repeater.p4", "cli_input": "commands/ge2-commands.txt"},
-      "ge3": {"program": "p4other/repeater.p4", "cli_input": "commands/ge3-commands.txt"}
+      "fir": {
+        "program": "p4src/firewall.p4",
+        "cli_input": "commands/fir-commands.txt",
+        "cpu_port": true
+      },
+      "ge1": {
+        "program": "p4other/repeater.p4",
+        "cli_input": "commands/ge1-commands.txt"
+      },
+      "ge2": {
+        "program": "p4other/repeater.p4",
+        "cli_input": "commands/ge2-commands.txt"
+      },
+      "ge3": {
+        "program": "p4other/repeater.p4",
+        "cli_input": "commands/ge3-commands.txt"
+      }
     }
   }
 }
