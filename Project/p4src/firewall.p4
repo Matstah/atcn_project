@@ -36,6 +36,7 @@ control MyIngress(inout headers hdr,
     #include "ingress/dpi.p4"
     #include "ingress/ingress_filter.p4"
     #include "ingress/egress_filter.p4"
+    #include "ingress/port_knocking.p4"
 
     apply {
         #include "ingress/apply.p4"

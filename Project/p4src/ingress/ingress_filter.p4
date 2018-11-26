@@ -23,18 +23,3 @@ table whitelist_tcp_dst_port{
     }
     size = 255; //16bit for ports.., but only a few to allow
 }
-
-//will later be moved to port knocking
-table secret_entries{
-    key = {
-        hdr.ipv4.dstAddr : exact;
-        hdr.ipv4.srcAddr : exact;
-        hdr.tcp.dstPort : exact;
-        hdr.tcp.srcPort : exact;
-    }
-    actions = {
-        NoAction;
-        //go_trough secret_port;
-    }
-    size = 255;
-}

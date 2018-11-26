@@ -1,6 +1,7 @@
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
+
 header ethernet_t {
     macAddr_t dstAddr;
     macAddr_t srcAddr;
@@ -55,8 +56,27 @@ header dpi_t { // DPI
     bit<16> ingress_port;
 } // 6 Bytes
 
+header knocker_t{
+    bit<32> srcAddr;
+    bit<32> dstAddr;
+    bit<16> srcPort;
+    bit<8> protocol;
+}//11 bytes
+
 struct metadata {
+    bit<8> clone_reason; //2:DPI //2:port knocking
+
     port_t ingress_port; // DPI, because cloning resets all metadata
+
+    //port knocking part
+    bit<8> knock_id;
+    bit<32> knock_slot;
+    bit<SIZE_KNOCK_SEQ> knock_next;
+    bit<48> knock_timestamp;
+    bit<48> delta_time;
+    bit<SIZE_KNOCK_SEQ> sequence_number;
+    bit<SIZE_KNOCK_SEQ> total_knocks;
+    bit<16> knock_srcPort;
 }
 
 struct headers {
@@ -65,5 +85,6 @@ struct headers {
     tcp_t        tcp;
     udp_t        udp;
 
-    dpi_t dpi; // DPI
+    dpi_t        dpi; // DPI
+    knocker_t    knocker;
 }
