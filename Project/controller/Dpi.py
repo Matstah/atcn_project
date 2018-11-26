@@ -4,12 +4,11 @@ class DpiPacket(Packet):
     name = 'DpiPacket'
     fields_desc = [BitField('srcIpAddr',0,32), BitField('ingress_port',0,16)]
 
-LAYER_ORDER = ['ethernet', 'ip', 'tcp', 'dpi']
+LAYER_ORDER = ['ethernet', 'ip', 'tcp']
 LAYER_MAP = {
     'ethernet': Ether,
     'tcp': TCP,
-    'ip': IP,
-    'dpi': DpiPacket
+    'ip': IP
 }
 
 def handle_dpi(pkt, count):
