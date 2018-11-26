@@ -41,7 +41,7 @@ action delete_knock_state(){
     reg_knock_timeout.write((bit<32>)meta.knock_id, (bit<48>)0); //time.now-time.then <delta_t ok..
 }
 
-action open_sesame(){
+action send_controller_open_sesame(){
     //open port for srcIP
     //tell controller
 }

@@ -165,7 +165,7 @@ control MyIngress(inout headers hdr,
                                              set2next_knock_state();
                                          }else{
                                              //knocked final port-> tell controller to activate vpn
-                                             //let_knocker_pass();
+                                             send_controller_open_sesame();
                                              delete_knock_state();
                                          }
                                      }else{
