@@ -26,14 +26,14 @@ control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
 
-    // register<bit<7>>(1) inspection_probability;
+    register<bit<7>>(1) inspection_probability;
 
     action drop() {
         mark_to_drop();
     }
 
     #include "ingress/ip_forwarding.p4"
-    // #include "ingress/dpi.p4"
+    #include "ingress/dpi.p4"
 
     apply {
         #include "ingress/apply.p4"
@@ -47,7 +47,7 @@ control MyEgress(inout headers hdr,
                  inout metadata meta,
                  inout standard_metadata_t standard_metadata) {
     apply {
-        // #include "egress/apply.p4"
+        #include "egress/apply.p4"
     }
 }
 
