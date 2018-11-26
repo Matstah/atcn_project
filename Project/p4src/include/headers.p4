@@ -23,6 +23,13 @@ header ipv4_t {
     ip4Addr_t dstAddr;
 } // 20 Bytes
 
+header udp_t{
+    bit<16> srcPort;
+    bit<16> dstPort;
+    bit<16> udp_length;
+    bit<16> checksum;
+}
+
 header tcp_t{
     bit<16> srcPort;
     bit<16> dstPort;
@@ -56,6 +63,7 @@ struct headers {
     ethernet_t   ethernet;
     ipv4_t       ipv4;
     tcp_t        tcp;
+    udp_t        udp;
 
     dpi_t dpi; // DPI
 }
