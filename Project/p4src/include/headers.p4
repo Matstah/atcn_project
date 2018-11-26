@@ -49,6 +49,8 @@ header dpi_t { // DPI
 } // 6 Bytes
 
 struct metadata {
+    bit<1> debugging;
+    bit<1> dpi_activated;
     port_t ingress_port; // DPI, because cloning resets all metadata
 }
 

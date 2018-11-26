@@ -31,11 +31,14 @@ LAYER_MAP = {
     'tcp': TCP,
     'dpi': DpiHeader
 }
+
+# prepares a string of the packet inluding the dpi content
+# this can then be used to log or print
 def handle_dpi(pkt, count):
-    print('Received DPI packet number {}'.format(count))
+    result = 'Received DPI packet number {}\n'.format(count)
 
     # show packet
-    pkt.show()
+    result = result + pkt.show(dump=True) + '\n'
 
     # get payload from last layer, which is the dpi_header plus payload
     payload = None
@@ -47,7 +50,9 @@ def handle_dpi(pkt, count):
     # the last layer's payload contains the dpi_header
     if(payload):
         dpi = DpiHeader(payload)
-        print(stringify_dpi(dpi))
+        result = result + stringify_dpi(dpi) + '\n'
     else:
-        print('Could not extract DPI information and payload!')
-    print '-'*10
+        result = result + 'Could not extract DPI information and payload!\n'
+    result = result + '-'*10 + '\n'
+
+    return result

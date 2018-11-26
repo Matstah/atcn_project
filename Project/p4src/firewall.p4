@@ -26,7 +26,10 @@ control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
 
-    register<bit<7>>(1) inspection_probability;
+    // DPI:
+    // index = 0: prob. for a new flow to be inspected
+    // index = 1: to be set if debugging should be activated
+    register<bit<7>>(2) inspection_probability;
 
     action drop() {
         mark_to_drop();
