@@ -34,12 +34,7 @@ class Controller(object):
 
     def recv_msg_dpi(self, pkt):
         self.dpi_counter = self.dpi_counter + 1
-        print('Received DPI packet number {}'.format(self.dpi_counter))
-        packet = Ether(str(pkt))
-        # print(packet)
-        if packet.type == 0x4321:
-            dpi_header = Dpi.DpiPacket(packet.payload)
-            Dpi.print_dpi(dpi_header)
+        Dpi.handle_dpi(pkt, self.dpi_counter)
 
     def run(self):
         script = path.basename(__file__)

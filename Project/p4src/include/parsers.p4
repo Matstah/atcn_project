@@ -49,8 +49,6 @@ control MyDeparser(packet_out packet, in headers hdr) {
 
         //Only emited if valid
         packet.emit(hdr.tcp);
-
-        // packet.emit(hdr.dpi);
-
+        packet.emit(hdr.dpi);
     }
 }
