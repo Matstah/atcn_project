@@ -7,7 +7,8 @@
 #include "include/parsers.p4"
 
 #define TIMESTAMP_WIDTH 48
-#define TIMEOUT 3000
+#define TIMEOUT_TCP 3000
+#define TIMEOUT_UDP 3000
 
 
 /*************************************************************************
@@ -31,6 +32,18 @@ control MyIngress(inout headers hdr,
 
     action drop() {
         mark_to_drop();
+    }
+
+    action hash_packet() {
+        hash(meta.flow_id,
+            HashAlgorithm.crc16,
+            (bit<1>)0,
+            { hdr.ipv4.srcAddr,
+              hdr.ipv4.dstAddr,
+               hdr.udp.srcPort,
+               hdr.udp.dstPort,
+               hdr.ipv4.protocol},
+            (bit<16>)1024);
     }
 
     // L2 LEARNING
@@ -129,19 +142,6 @@ control MyIngress(inout headers hdr,
 //END BLACK and WHITE lists
 
     apply {
-        // hash(meta.flow_id,
-	    //      HashAlgorithm.crc16,
-	    //      (bit<1>)0,
-	    //      { hdr.ipv4.srcAddr,
-	    //        hdr.ipv4.dstAddr,
-        //        hdr.tcp.srcPort,
-        //        hdr.tcp   .dstPort,
-        //        hdr.ipv4.protocol},
-	    //      (bit<16>)1024);
-        // TODO: set known flows back to 0 after either the close flag or a timeout
-        // TODO: make time capture register for outgoing flows
-        // TODO: UDP timeout? what for UDP streams over longer time? should timeout be extended for every UDP packet?
-        //       possible maliciousness?
         // TODO: calculate how big the chance for false positives is for the hashes (in slides) - need an explanation why size of register is used ("...want a fpr lower than 1%...")
          if (hdr.ipv4.isValid()){
              if (standard_metadata.ingress_port == 4 ||
@@ -155,22 +155,21 @@ control MyIngress(inout headers hdr,
                  }
                  //stateless firewall
                  if (hdr.tcp.isValid()){
-                     hash(meta.flow_id,
-             	         HashAlgorithm.crc16,
-             	         (bit<1>)0,
-             	         { hdr.ipv4.srcAddr,
-             	           hdr.ipv4.dstAddr,
-                            hdr.tcp.srcPort,
-                            hdr.tcp.dstPort,
-                            hdr.ipv4.protocol},
-             	         (bit<16>)1024);
+                     hash_packet();
                      if (hdr.tcp.syn == 1){
-                         time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT)
+                         time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_TCP);
                          known_flows.write(meta.flow_id, 1);
                      } else if (hdr.tcp.fin == 1){
                          known_flows.write(meta.flow_id, 0);
                          time_stamps.write(meta.flow_id, 0);
                      }
+                 } else if(hdr.udp.isValid()){
+                    hash_packet();
+                    // only save UDP flow if the packet is not a one-off (if source Port is not 0) and thus awaits a response
+                    if(hdr.udp.srcPort != 0){
+                        known_flows.write(meta.flow_id, 1);
+                        time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_UDP);
+                    }
                  }
              }
              if (standard_metadata.ingress_port == 1 ||
@@ -179,17 +178,9 @@ control MyIngress(inout headers hdr,
                  //ext2in
                  //stateless firewall
                  if (hdr.tcp.isValid()){
-                     hash(meta.flow_id,
-             	         HashAlgorithm.crc16,
-             	         (bit<1>)0,
-             	         { hdr.ipv4.dstAddr,
-             	           hdr.ipv4.srcAddr,
-                            hdr.tcp.dstPort,
-                            hdr.tcp.srcPort,
-                            hdr.ipv4.protocol},
-             	         (bit<16>)1024);
+                     hash_packet();
                      known_flows.read(meta.flow_is_known, meta.flow_id);
-                     time_stamps.read(meta.max_time, meta.flow_id
+                     time_stamps.read(meta.max_time, meta.flow_id;
                      if (meta.flow_is_known != 1){
                          //port filter, checks if traffic is for server
                          if(whitelist_tcp_dst_port.apply().hit){
@@ -198,12 +189,27 @@ control MyIngress(inout headers hdr,
                          //TODO: what about UDP?
                      }
                      if(meta.max_time < standard_metadata.ingress_global_timestamp){
-                         known_flows.write(meta.flow_id, 0)
-                         time_stamps.write(meta.flow_id, 0)
+                         known_flows.write(meta.flow_id, 0);
+                         time_stamps.write(meta.flow_id, 0);
+                         drop(); return;
                      } else {
-                         time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT)
+                         time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_TCP);
                      }
-                }else{
+                } else if(hdr.udp.isValid()){
+                   hash_packet();
+                   known_flows.read(meta.flow_is_known, meta.flow_id);
+                   time_stamps.read(meta.max_time, meta.flow_id);
+                   if (meta.flow_is_known != 1) {
+                       //TODO: whitelist?
+                   }
+                   if(meta.max_time < standard_metadata.ingress_global_timestamp) {
+                       known_flows.write(meta.flow_id, 0);
+                       time_stamps.write(meta.flow_id, 0);
+                       drop(); return;
+                   } else {
+                       time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_UDP);
+                   }
+                }
                     //TODO: we receive non tcp/udp traffic.. drop
                     //TODO: what about pinging server? should this be possible?
                     //TODO: here we could do port knocking..
