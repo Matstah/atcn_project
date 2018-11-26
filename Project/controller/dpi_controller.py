@@ -31,6 +31,10 @@ class Controller(object):
             self.controller.mirroring_add(mirror_id, self.cpu_port)
             print('mirror_id={} added to cpu_port={}'.format(mirror_id, self.cpu_port))
 
+    def set_probability(self, index, prob):
+        self.controller.register_write('MyIngress.inspection_probability', index, prob)
+
+
     def recv_msg_dpi(self, pkt):
         self.dpi_counter = self.dpi_counter + 1
         Dpi.handle_dpi(pkt, self.dpi_counter)
@@ -40,7 +44,7 @@ class Controller(object):
         print('{}: Controller.run() called on {}'.format(script, self.sw_name))
 
         # set inspection_probability
-        self.controller.register_write('MyIngress.inspection_probability', 0, self.inspection_probability)
+        self.set_probability(0, self.inspection_probability)
 
         # DPI
         cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
@@ -61,9 +65,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     try:
-        controller = Controller(args.sw, args.probability).run()
+        controller = Controller(args.sw, args.probability)
+        controller.run()
     except:
         print(red('CONTROLLER TERMINATED UNEXPECTEDLY! WITH ERROR:'))
         traceback.print_exc()
     else:
+        # Reset the probability to zero to disable DPI
+        controller.set_probability(0, 0)
         print('CONTROLLER REACHED THE END')
