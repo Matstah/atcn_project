@@ -55,7 +55,7 @@ header tcp_t{
 header udp_t{
     bit<16> srcPort;
     bit<16> dstPort;
-    bit<16> lngth;
+    bit<16> udp_length;
     bit<16> checksum;
 }
 
