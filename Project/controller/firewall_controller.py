@@ -20,27 +20,28 @@ class Controller(object):
 
     def init(self):
         self.controller.reset_state()
-        self.add_mirror(100) # DPI: mirror_id = 100
+        # self.add_mirror(100) # DPI: mirror_id = 100
 
-    def add_mirror(self, mirror_id):
-        if self.cpu_port:
-            self.controller.mirroring_add(mirror_id, self.cpu_port)
+    # def add_mirror(self, mirror_id):
+    #     if self.cpu_port:
+    #         self.controller.mirroring_add(mirror_id, self.cpu_port)
 
-    def recv_msg_dpi(self, pkt):
-        print('recv_msg_dpi')
-        packet = Ether(str(pkt))
-        print(packet)
-        if packet.type == 0x4321:
-            print('sdfjskdf')
+    # def recv_msg_dpi(self, pkt):
+    #     print('recv_msg_dpi')
+    #     packet = Ether(str(pkt))
+    #     print(packet)
+    #     if packet.type == 0x4321:
+    #         dpi_header = Dpi.DpiPacket(packet.payload)
+    #         Dpi.print_dpi(dpi_header)
 
     def run(self):
         script = path.basename(__file__)
         print('{}: Controller.run() called on {}'.format(script, self.sw_name))
 
         # DPI
-        cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
-        print('{}: Start DPI on cpu_port_intf={}'.format(script, cpu_port_intf))
-        sniff(iface=cpu_port_intf, prn=self.recv_msg_dpi)
+        # cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
+        # print('{}: Start DPI on cpu_port_intf={}'.format(script, cpu_port_intf))
+        # sniff(iface=cpu_port_intf, prn=self.recv_msg_dpi)
 
         ## TODO: other things
         # WE DO NOT REACH THE CODE HERE BECAUSE sniff LOOPS LIKE IT SEEMS --> threads?, different controller?
@@ -57,3 +58,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     controller = Controller(args.sw).run()
+    print('CONTROLLER TERMIANTED')

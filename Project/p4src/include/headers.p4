@@ -43,10 +43,10 @@ header tcp_t{
     bit<16> urgentPtr;
 } // 20 Bytes
 
-header dpi_t { // DPI
-    bit<32> srcAddr;
-    bit<16> ingress_port;
-} // 6 Bytes
+// header dpi_t { // DPI
+//     bit<32> srcAddr;
+//     bit<16> ingress_port;
+// } // 6 Bytes
 
 struct metadata {
     port_t ingress_port; // DPI, because cloning resets all metadata
@@ -57,5 +57,5 @@ struct headers {
     ipv4_t       ipv4;
     tcp_t        tcp;
 
-    dpi_t dpi; // DPI
+    // dpi_t dpi; // DPI
 }
