@@ -12,14 +12,6 @@ LAYER_MAP = {
     'tcp': TCP
 }
 
-# global
-count = 0
-
-def increment_count():
-    global count
-    count = count + 1
-    return count
-
 def get_if():
     iface=None
     for i in get_if_list():
@@ -38,43 +30,19 @@ def isNotOutgoing(my_mac):
 
     return _isNotOutgoing
 
-def pretty_print_layer(layer, content):
-    splits = repr(content).split()
-    layer_name = splits.pop(0)
-    if layer_name != 'None':
-        print("{} - Received layer: {}".format(layer.upper(), layer_name))
-    else:
-        print("No '{}' layer".format(layer))
-        return
-
-    splits.pop() # remove last element
-    indent = 2
-    for x in splits:
-        vals = x.split("=")
-        if len(vals) < 2:
-            indent = indent + 2
-        print("{}{}".format(' '*indent, vals))
-
-def handle_pkt(pkt, layers):
-    print('Packet {}'.format(increment_count()))
-    for layer in layers:
-            pretty_print_layer(layer, pkt.getlayer(LAYER_MAP[layer]))
+def handle_pkt(pkt):
+    pkt.show()
     print '-'*10
 
 
-def receive(layers, num_packets):
+def receive(num_packets):
     ifaces = filter(lambda i: 'eth' in i, os.listdir('/sys/class/net/'))
     print("Available interfaces: {}".format(ifaces))
     iface = ifaces[0]
     print "sniffing on %s" % iface
     sys.stdout.flush()
 
-    sniff(iface=iface, prn=lambda x: handle_pkt(x, layers), count=num_packets)
-
-    #my_filter = isNotOutgoing(get_if_hwaddr(get_if()))
-    #sniff(iface=iface, prn=lambda x: handle_pkt(x, layers), lfilter=my_filter, count=num_packets)
-
-    #sniff(filter="ether proto 0x7777", iface = iface, prn = lambda x: handle_pkt(x), lfilter=my_filter)
+    sniff(iface=iface, prn=lambda x: handle_pkt(x), count=num_packets)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -86,7 +54,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_packets', type=int, required=False, default=9999, help='number of packets to receive before abortion (optional)')
 
     # args for actual functionality
-    parser.add_argument('--layers', '-l', type=str, required=False, help='Filter header layers with space delimited list')
+    # TODO: more stuff?
 
     # other args
     parser.add_argument('--debug', action='store_true', required=False, help='Activate debug messages')
@@ -108,8 +76,4 @@ if __name__ == '__main__':
         log.debug("Run the following command:\n{}".format(cmd))
         call(cmd)
     else:
-        if(args.layers):
-            layers = [str(item).lower() for item in args.layers.split(' ')]
-        else:
-            layers = ['ethernet', 'tcp', 'ip']
-        receive(layers, args.num_packets)
+        receive(args.num_packets)

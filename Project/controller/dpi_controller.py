@@ -8,10 +8,8 @@ import traceback
 import time
 import Dpi
 
-def red(str):
-    code = 91
-    return '\033[{}m'.format(code) + str + '\033[0m'
-
+# Controller
+###########
 class Controller(object):
 
     def __init__(self, sw_name, inspection_probability):
@@ -48,6 +46,12 @@ class Controller(object):
         cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
         print('{}: Start DPI on cpu_port_intf={}'.format(script, cpu_port_intf))
         sniff(iface=cpu_port_intf, prn=self.recv_msg_dpi)
+
+# MAIN
+######
+def red(str):
+    code = 91
+    return '\033[{}m'.format(code) + str + '\033[0m'
 
 if __name__ == "__main__":
     import argparse

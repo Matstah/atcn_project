@@ -42,7 +42,7 @@ def get_mac(host, option=None):
     else:
         return topo.get_host_mac(host)
 
-def send(dst, packets, sleep):
+def send(dst, packets, sleep, showPacket=False):
     log.debug('Sending {} packets to {}'.format(packets, dst))
     ip_addr = get_host_ip(dst)
     iface = get_if()
@@ -57,10 +57,17 @@ def send(dst, packets, sleep):
     log.info("sending on interface %s to %s" % (iface, str(ip_addr)))
 
     # the actual work
+    sport = random.randint(49152,65535)
+    count = 0
     for _ in range(packets):
+        count = count + 1
         pkt = Ether(src=ether_src, dst=ether_dst)
-        pkt = pkt / IP(dst=ip_addr) / TCP(dport=80, sport=random.randint(49152,65535))
+        pkt = pkt / IP(dst=ip_addr) / TCP(dport=80, sport=sport) / "Hello {}. #{}".format(dst, count)
         sendp(pkt, iface=iface, verbose=False)
+        if showPacket:
+            print('The following packet was sent:')
+            pkt.show()
+            print('-'*20)
         time.sleep(sleep)
 
 
@@ -77,6 +84,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--packets', type=int, required=False, default=1, help='Number of packets')
     #TODO parser.add_argument('--receive', action='store_true', required='False', help='Trigger receive terminals to open directly [only from local]')
     parser.add_argument('--sleep', type=float, required=False, default=0.0, help='Sleep time between packets')
+    parser.add_argument('--show', action='store_true', required=False, help='If set, all sent packets are printed')
 
     # other args
     parser.add_argument('--debug', action='store_true', required=False, help='Activate debug messages')
@@ -105,5 +113,5 @@ if __name__ == "__main__":
         # load globals
         topo = Topology(db="/home/p4/atcn-project/Project/topology.db")
 
-        send(args.dst, args.packets, args.sleep)
+        send(args.dst, args.packets, args.sleep, showPacket=args.show)
 # END MAIN
