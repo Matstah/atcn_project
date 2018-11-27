@@ -12,6 +12,14 @@ LAYER_MAP = {
     'tcp': TCP
 }
 
+# global
+count = 0
+
+def increment_count():
+    global count
+    count = count + 1
+    return count
+
 def get_if():
     iface=None
     for i in get_if_list():
@@ -48,20 +56,24 @@ def pretty_print_layer(layer, content):
         print("{}{}".format(' '*indent, vals))
 
 def handle_pkt(pkt, layers):
+    print('Packet {}'.format(increment_count()))
     for layer in layers:
             pretty_print_layer(layer, pkt.getlayer(LAYER_MAP[layer]))
     print '-'*10
 
 
-def receive(layers):
+def receive(layers, num_packets):
     ifaces = filter(lambda i: 'eth' in i, os.listdir('/sys/class/net/'))
+    print("Available interfaces: {}".format(ifaces))
     iface = ifaces[0]
     print "sniffing on %s" % iface
     sys.stdout.flush()
 
-    my_filter = isNotOutgoing(get_if_hwaddr(get_if()))
+    sniff(iface=iface, prn=lambda x: handle_pkt(x, layers), count=num_packets)
 
-    sniff(iface=iface, prn=lambda x: handle_pkt(x, layers), lfilter=my_filter)
+    #my_filter = isNotOutgoing(get_if_hwaddr(get_if()))
+    #sniff(iface=iface, prn=lambda x: handle_pkt(x, layers), lfilter=my_filter, count=num_packets)
+
     #sniff(filter="ether proto 0x7777", iface = iface, prn = lambda x: handle_pkt(x), lfilter=my_filter)
 
 if __name__ == '__main__':
@@ -71,6 +83,7 @@ if __name__ == '__main__':
     parser.add_argument('--local', action='store_true', required=False, help='If script should run from local prompt')
     parser.add_argument('--host', type=str, required=False, help='host NAME in case of a local call')
     parser.add_argument('--on_remote', action='store_true', required=False, help='Do not set this flag yourself!!')
+    parser.add_argument('--num_packets', type=int, required=False, default=9999, help='number of packets to receive before abortion (optional)')
 
     # args for actual functionality
     parser.add_argument('--layers', '-l', type=str, required=False, help='Filter header layers with space delimited list')
@@ -99,4 +112,4 @@ if __name__ == '__main__':
             layers = [str(item).lower() for item in args.layers.split(' ')]
         else:
             layers = ['ethernet', 'tcp', 'ip']
-        receive(layers)
+        receive(layers, args.num_packets)

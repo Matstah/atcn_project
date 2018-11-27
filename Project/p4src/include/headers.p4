@@ -2,19 +2,11 @@
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
 
-const bit<16> TYPE_IPV4 = 0x800;
-const bit<16> TYPE_BROADCAST = 0x1234;
-
-typedef bit<9>  egressSpec_t;
-typedef bit<48> macAddr_t;
-typedef bit<32> ip4Addr_t;
-
-
 header ethernet_t {
     macAddr_t dstAddr;
     macAddr_t srcAddr;
     bit<16>   etherType;
-}
+} // 14 Bytes
 
 header ipv4_t {
     bit<4>    version;
@@ -30,6 +22,13 @@ header ipv4_t {
     bit<16>   hdrChecksum;
     ip4Addr_t srcAddr;
     ip4Addr_t dstAddr;
+} // 20 Bytes
+
+header udp_t{
+    bit<16> srcPort;
+    bit<16> dstPort;
+    bit<16> udp_length;
+    bit<16> checksum;
 }
 
 header tcp_t{
@@ -61,12 +60,34 @@ header udp_t{
 
 struct learn_t {
 
-    bit<48> srcAddr;
-    bit<9>  ingress_port;
+header dpi_t { // DPI
+    bit<32> srcAddr;
+    bit<16> ingress_port;
+} // 6 Bytes
 
-}
+header knocker_t{
+    bit<32> srcAddr;
+    bit<32> dstAddr;
+    bit<16> srcPort;
+    bit<8> protocol;
+}//11 bytes
 
 struct metadata {
+    bit<8> clone_reason; //2:DPI //2:port knocking
+
+    port_t ingress_port; // DPI, because cloning resets all metadata
+
+    //port knocking part
+    bit<8> knock_id;
+    bit<32> knock_slot;
+    bit<SIZE_KNOCK_SEQ> knock_next;
+    bit<48> knock_timestamp;
+    bit<48> delta_time;
+    bit<SIZE_KNOCK_SEQ> sequence_number;
+    bit<SIZE_KNOCK_SEQ> total_knocks;
+    bit<16> knock_srcPort;
+
+    // stateless part
     bit<32> flow_id; // TODO: check bit length
     bit<1> flow_is_known;
     bit<48> max_time;
@@ -78,4 +99,7 @@ struct headers {
     ipv4_t       ipv4;
     tcp_t        tcp;
     udp_t        udp;
+
+    dpi_t        dpi; // DPI
+    knocker_t    knocker;
 }

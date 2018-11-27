@@ -144,11 +144,20 @@ control MyIngress(inout headers hdr,
     apply {
         // TODO: calculate how big the chance for false positives is for the hashes (in slides) - need an explanation why size of register is used ("...want a fpr lower than 1%...")
          if (hdr.ipv4.isValid()){
-             if (standard_metadata.ingress_port == 4 ||
+             /* TODO ??
+             // enable traffic with server for everybody for now
+             // for testing should be reachable (at least for the moment)
+             if (standard_metadata.ingress_port == 7) {
+                 // simple routing behaviour..?
+             }
+             */
+             if (
+                 standard_metadata.ingress_port == 4 ||
                  standard_metadata.ingress_port == 5 ||
                  standard_metadata.ingress_port == 6 ||
-                 standard_metadata.ingress_port == 7){
-                 //in2ext
+                 standard_metadata.ingress_port == 7
+                 ){
+                 //in2ext TODO what about in2in
                  //dst ip blacklist filter
                  if(blacklist_dst_ip.apply().hit){
                      return; //why does it only block that way and not with drop??
@@ -172,10 +181,12 @@ control MyIngress(inout headers hdr,
                     }
                  }
              }
-             if (standard_metadata.ingress_port == 1 ||
+             else if ( // TODO changed to else if
+                 standard_metadata.ingress_port == 1 ||
                  standard_metadata.ingress_port == 2 ||
-                 standard_metadata.ingress_port == 3){
-                 //ext2in
+                 standard_metadata.ingress_port == 3
+                 ){
+                 //ext2in TODO not necessairily!! what about ext2ext?!
                  //stateless firewall
                  if (hdr.tcp.isValid()){
                      hash_packet();
@@ -222,6 +233,7 @@ control MyIngress(inout headers hdr,
                     return;
                 }
             }
+
             smac.apply();
             if (dmac.apply().hit){
             }

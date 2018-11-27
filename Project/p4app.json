@@ -1,5 +1,5 @@
 {
-  "program": "p4src/project.p4",
+  "program": "p4src/firewall.p4",
   "switch": "simple_switch",
   "compiler": "p4c",
   "options": "--target bmv2 --arch v1model --std p4-16",
@@ -8,10 +8,6 @@
   "pcap_dump": true,
   "enable_log": true,
   "exec_scripts": [
-    {
-      "cmd": "sudo python controller.py --sw fir &",
-      "reboot_run": true
-    }
   ],
   "topo_module": {
     "file_path": "",
@@ -31,7 +27,7 @@
   },
   "topology": {
     "assignment_strategy": "mixed",
-    "auto_arp_tables": false,
+    "auto_arp_tables": true,
     "links": [
       ["he1", "ge1"], ["he2", "ge2"], ["he3", "ge3"],
       ["ge1", "fir"], ["ge2", "fir"], ["ge3", "fir"],
@@ -55,10 +51,23 @@
       }
     },
     "switches": {
-      "fir": {},
-      "ge1": {"program": "p4external/external_gateway.p4"},
-      "ge2": {"program": "p4external/external_gateway.p4"},
-      "ge3": {"program": "p4external/external_gateway.p4"}
+      "fir": {
+        "program": "p4src/firewall.p4",
+        "cli_input": "commands/fir-commands.txt",
+        "cpu_port": true
+      },
+      "ge1": {
+        "program": "p4other/repeater.p4",
+        "cli_input": "commands/ge1-commands.txt"
+      },
+      "ge2": {
+        "program": "p4other/repeater.p4",
+        "cli_input": "commands/ge2-commands.txt"
+      },
+      "ge3": {
+        "program": "p4other/repeater.p4",
+        "cli_input": "commands/ge3-commands.txt"
+      }
     }
   }
 }

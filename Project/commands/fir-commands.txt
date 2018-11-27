@@ -1,0 +1,7 @@
+table_add ip_forwarding forward_internal 10.0.4.1/32 => 4 00:01:0a:00:04:01 00:00:0a:00:04:01
+table_add ip_forwarding forward_internal 10.0.4.2/32 => 5 00:01:0a:00:04:02 00:00:0a:00:04:02
+table_add ip_forwarding forward_internal 10.0.4.3/32 => 6 00:01:0a:00:04:03 00:00:0a:00:04:03
+table_add ip_forwarding forward_internal 10.0.4.4/32 => 7 00:01:0a:00:04:04 00:00:0a:00:04:04
+table_add ip_forwarding forward_external 10.0.1.1/24 => 1
+table_add ip_forwarding forward_external 10.0.2.1/24 => 2
+table_add ip_forwarding forward_external 10.0.3.1/24 => 3
