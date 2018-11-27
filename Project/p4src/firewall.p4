@@ -28,8 +28,12 @@ control MyIngress(inout headers hdr,
 
     // DPI:
     // index = 0: prob. for a new flow to be inspected
-    // index = 1: to be set if debugging should be activated
-    register<bit<7>>(2) inspection_probability;
+    register<bit<7>>(1) inspection_probability;
+
+    // Options:
+    // index = 0: to be set if debugging should be activated (uses DPI)
+    // TODO: add other options, e.g. enabling/disabling blacklisting, etc
+    register<bit<1>>(1) options;
 
     action drop() {
         mark_to_drop();

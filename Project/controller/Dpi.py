@@ -4,19 +4,21 @@ import socket, struct
 # Packet description
 class DpiHeader(Packet):
     name = 'DpiHeader'
-    fields_desc = [BitField('srcIpAddr',0,32), BitField('ingress_port',0,16)]
+    fields_desc = [BitField('srcIpAddr',0,32), BitField('ingress_port',0,16), BitField('flow_id',0,32)]
 
 # stringify DPI content
 def stringify_dpi(dpi):
     args = {
         'src': socket.inet_ntoa(struct.pack('!L', dpi.srcIpAddr)),
         'port': dpi.ingress_port,
+        'flow_id': dpi.flow_id,
         'payload': dpi.payload
     }
     s = """
 DPI:
 src={src}
 port={port}
+flow_id={flow_id}
 
 PAYLOAD:
 {payload}
@@ -34,11 +36,12 @@ LAYER_MAP = {
 
 # prepares a string of the packet inluding the dpi content
 # this can then be used to log or print
+# also returns the flow_id
 def handle_dpi(pkt, count):
-    result = 'Received DPI packet number {}\n'.format(count)
+    text = 'Received DPI packet number {}\n'.format(count)
 
     # show packet
-    result = result + pkt.show(dump=True) + '\n'
+    text = text + pkt.show(dump=True) + '\n'
 
     # get payload from last layer, which is the dpi_header plus payload
     payload = None
@@ -48,11 +51,13 @@ def handle_dpi(pkt, count):
             payload = layer_content.payload
 
     # the last layer's payload contains the dpi_header
+    flow_id = -1
     if(payload):
         dpi = DpiHeader(payload)
-        result = result + stringify_dpi(dpi) + '\n'
+        text = text + stringify_dpi(dpi) + '\n'
+        flow_id = dpi.flow_id
     else:
-        result = result + 'Could not extract DPI information and payload!\n'
-    result = result + '-'*10 + '\n'
+        text = text + 'Could not extract DPI information and payload!\n'
+    text = text + '-'*10 + '\n'
 
-    return result
+    return [text, flow_id]

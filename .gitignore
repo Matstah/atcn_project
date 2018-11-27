@@ -26,3 +26,6 @@ pcap*/
 *.bbl
 *.log
 *.out
+
+# DPI log files
+Project/controller/dpi_log/*

@@ -46,12 +46,18 @@ header tcp_t{
 header dpi_t { // DPI
     bit<32> srcAddr;
     bit<16> ingress_port;
-} // 6 Bytes
+    bit<32> flow_id;
+} // 10 Bytes
 
 struct metadata {
+    // DPI
     bit<1> debugging;
     bit<1> dpi_activated;
     port_t ingress_port; // DPI, because cloning resets all metadata
+
+    // Stateful Firewall
+    bit<32> flow_id; // also used for DPI
+    // TODO: add other things
 }
 
 struct headers {
