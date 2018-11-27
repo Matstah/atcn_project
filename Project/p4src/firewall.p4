@@ -32,6 +32,18 @@ control MyIngress(inout headers hdr,
         mark_to_drop();
     }
 
+    action hash_packet() {
+        hash(meta.flow_id,
+            HashAlgorithm.crc16,
+            (bit<1>)0,
+            { hdr.ipv4.srcAddr,
+              hdr.ipv4.dstAddr,
+               hdr.udp.srcPort,
+               hdr.udp.dstPort,
+               hdr.ipv4.protocol},
+            (bit<16>)1024);
+    }
+
     #include "ingress/ip_forwarding.p4"
     #include "ingress/dpi.p4"
     #include "ingress/ingress_filter.p4"
