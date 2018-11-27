@@ -45,9 +45,10 @@ header tcp_t{
 
 header dpi_t { // DPI
     bit<32> srcAddr;
+    bit<32> dstAddr;
     bit<16> ingress_port;
     bit<32> flow_id;
-} // 10 Bytes
+} // 14 Bytes
 
 struct metadata {
     // DPI

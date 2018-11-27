@@ -4,26 +4,31 @@ import socket, struct
 # Packet description
 class DpiHeader(Packet):
     name = 'DpiHeader'
-    fields_desc = [BitField('srcIpAddr',0,32), BitField('ingress_port',0,16), BitField('flow_id',0,32)]
+    fields_desc = [BitField('srcIpAddr',0,32), BitField('dstIpAddr',0,32), BitField('ingress_port',0,16), BitField('flow_id',0,32)]
 
 # stringify DPI content
-def stringify_dpi(dpi):
-    args = {
-        'src': socket.inet_ntoa(struct.pack('!L', dpi.srcIpAddr)),
-        'port': dpi.ingress_port,
-        'flow_id': dpi.flow_id,
-        'payload': dpi.payload
-    }
+# d = dict from parse_dpi
+def stringify_dpi(d):
     s = """
 DPI:
 src={src}
+dst={dst}
 port={port}
 flow_id={flow_id}
 
 PAYLOAD:
 {payload}
-""".format(**args)
+""".format(**d)
     return s
+
+def parse_dpi(dpi):
+    return {
+        'src': socket.inet_ntoa(struct.pack('!L', dpi.srcIpAddr)),
+        'dst': socket.inet_ntoa(struct.pack('!L', dpi.dstIpAddr)),
+        'port': dpi.ingress_port,
+        'flow_id': dpi.flow_id,
+        'payload': dpi.payload
+    }
 
 # Handeling of packet
 LAYER_ORDER = ['ethernet', 'ip', 'tcp']
@@ -36,7 +41,7 @@ LAYER_MAP = {
 
 # prepares a string of the packet inluding the dpi content
 # this can then be used to log or print
-# also returns the flow_id
+# also returns parsed dict of the dpi
 def handle_dpi(pkt, count):
     text = 'Received DPI packet number {}\n'.format(count)
 
@@ -51,13 +56,19 @@ def handle_dpi(pkt, count):
             payload = layer_content.payload
 
     # the last layer's payload contains the dpi_header
-    flow_id = -1
+    dpi_dict = {
+        'src': '0.0.0.0',
+        'dst': '0.0.0.0',
+        'port': -1,
+        'flow_id': -1,
+        'payload': ''
+    }
     if(payload):
         dpi = DpiHeader(payload)
-        text = text + stringify_dpi(dpi) + '\n'
-        flow_id = dpi.flow_id
+        dpi_dict = parse_dpi(dpi)
+        text = text + stringify_dpi(dpi_dict) + '\n'
     else:
         text = text + 'Could not extract DPI information and payload!\n'
     text = text + '-'*10 + '\n'
 
-    return [text, flow_id]
+    return [text, dpi_dict]

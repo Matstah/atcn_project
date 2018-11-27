@@ -25,7 +25,7 @@ class Controller(object):
 
     def __init__(self, sw_name, inspection_probability, debug):
 
-        self.topo = Topology(db="topology.db")
+        self.topo = Topology(db=path.split(path.abspath(__file__))[0] + "/../topology.db")
         self.sw_name = sw_name
         self.thrift_port = self.topo.get_thrift_port(sw_name)
         self.inspection_probability = inspection_probability
@@ -71,24 +71,34 @@ class Controller(object):
     def get_log_path(self):
         return '{}/{}'.format(path.split(path.abspath(__file__))[0], DPI_FOLDER_NAME)
 
-    def get_flow_file(self, flow):
+    # d = dict with content of dpi parsing
+    def get_flow_file(self, d):
+        flow = d['flow_id']
+        src = d['src']
+        dst = d['dst']
         if flow not in self.log_files:
-            self.log_files[flow] = '{}/{}flow{}_{}'.format(self.file_path, DPI_BASE_FILENAME, flow, int(time()))
+            self.log_files[flow] = '{}/{}{}and{}-flow{}-start{}'.format(
+                self.file_path,
+                DPI_BASE_FILENAME,
+                src, dst,
+                flow, int(time())
+            )
         return self.log_files[flow]
 
     # append the content to the file of the specified flow
-    def log_dpi(self, content, flow_id):
-        with open(self.get_flow_file(flow_id), 'a') as log:
+    def log_dpi(self, content, d):
+        file = self.get_flow_file(d)
+        with open(file, 'a') as log:
             log.write(content)
-            log.close() # TODO: maybe move this to the end
+            log.close() # TODO: maybe move this to the end of the script?
 
     def recv_msg_dpi(self, pkt):
         self.dpi_counter = self.dpi_counter + 1
-        res, flow_id = Dpi.handle_dpi(pkt, self.dpi_counter)
+        res, d = Dpi.handle_dpi(pkt, self.dpi_counter)
         if self.debug:
             print(res)
         if bool(self.inspection_probability):
-            self.log_dpi(res, flow_id)
+            self.log_dpi(res, d)
 
     def run(self):
         script = path.basename(__file__)
@@ -136,3 +146,4 @@ if __name__ == "__main__":
             controller.deactivate_dpi()
             controller.deactivate_debug()
         print('CONTROLLER REACHED THE END')
+    # TODO: change file permissions.. should be deletable
