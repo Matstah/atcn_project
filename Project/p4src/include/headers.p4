@@ -51,14 +51,9 @@ header tcp_t{
     bit<16> urgentPtr;
 }
 
-header udp_t{
-    bit<16> srcPort;
-    bit<16> dstPort;
-    bit<16> udp_length;
-    bit<16> checksum;
-}
-
 struct learn_t {
+
+}
 
 header dpi_t { // DPI
     bit<32> srcAddr;

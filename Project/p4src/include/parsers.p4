@@ -40,11 +40,6 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.tcp);
         transition accept;
     }
-
-    state parse_udp {
-        packet.extract(hdr.udp);
-        transition accept;
-    }
 }
 
 /*************************************************************************

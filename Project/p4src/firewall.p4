@@ -7,6 +7,9 @@
 #include "include/headers.p4"
 #include "include/parsers.p4"
 
+#define TIMESTAMP_WIDTH 48
+#define TIMEOUT_TCP 3000
+#define TIMEOUT_UDP 3000
 
 /*************************************************************************
 ************   C H E C K S U M    V E R I F I C A T I O N   *************
@@ -27,6 +30,8 @@ control MyIngress(inout headers hdr,
                   inout standard_metadata_t standard_metadata) {
 
     register<bit<7>>(1) inspection_probability;
+    register<bit<1>>(4096) known_flows;
+    register<bit<TIMESTAMP_WIDTH>>(4096) time_stamps;
 
     action drop() {
         mark_to_drop();

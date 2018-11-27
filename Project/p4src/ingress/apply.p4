@@ -22,7 +22,7 @@ if (
             if(hdr.tcp.isValid()){
                 hash_packet();
                 known_flows.read(meta.flow_is_known, meta.flow_id);
-                time_stamps.read(meta.max_time, meta.flow_id;
+                time_stamps.read(meta.max_time, meta.flow_id);
 
                 if (meta.flow_is_known != 1){
                     if(whitelist_tcp_dst_port.apply().hit){
