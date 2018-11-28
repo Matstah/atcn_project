@@ -1,6 +1,7 @@
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
+
 header ethernet_t {
     macAddr_t dstAddr;
     macAddr_t srcAddr;
@@ -23,6 +24,13 @@ header ipv4_t {
     ip4Addr_t dstAddr;
 } // 20 Bytes
 
+header udp_t{
+    bit<16> srcPort;
+    bit<16> dstPort;
+    bit<16> udp_length;
+    bit<16> checksum;
+}
+
 header tcp_t{
     bit<16> srcPort;
     bit<16> dstPort;
@@ -41,7 +49,11 @@ header tcp_t{
     bit<16> window;
     bit<16> checksum;
     bit<16> urgentPtr;
-} // 20 Bytes
+}
+
+struct learn_t {
+
+}
 
 header dpi_t { // DPI
     bit<32> srcAddr;
@@ -50,21 +62,44 @@ header dpi_t { // DPI
     bit<32> flow_id;
 } // 14 Bytes
 
+header knocker_t{
+    bit<32> srcAddr;
+    bit<32> dstAddr;
+    bit<16> srcPort;
+    bit<8> protocol;
+}//11 bytes
+
 struct metadata {
+    bit<8> clone_reason; //1:DPI //2:port knocking
+
     // DPI
     bit<1> debugging;
     bit<1> dpi_activated;
     port_t ingress_port; // DPI, because cloning resets all metadata
 
-    // Stateful Firewall
-    bit<32> flow_id; // also used for DPI
-    // TODO: add other things
+    //port knocking part
+    bit<8> knock_id;
+    bit<32> knock_slot;
+    bit<SIZE_KNOCK_SEQ> knock_next;
+    bit<48> knock_timestamp;
+    bit<48> delta_time;
+    bit<SIZE_KNOCK_SEQ> sequence_number;
+    bit<SIZE_KNOCK_SEQ> total_knocks;
+    bit<16> knock_srcPort;
+
+    // stateless part
+    bit<32> flow_id; // TODO: check bit length // also used for DPI
+    bit<1> flow_is_known;
+    bit<48> max_time;
+    learn_t learn;
 }
 
 struct headers {
     ethernet_t   ethernet;
     ipv4_t       ipv4;
     tcp_t        tcp;
+    udp_t        udp;
 
-    dpi_t dpi; // DPI
+    dpi_t        dpi; // DPI
+    knocker_t    knocker;
 }

@@ -19,18 +19,121 @@ class Controller(object):
         self.sw_name = sw_name
         self.thrift_port = self.topo.get_thrift_port(sw_name)
         self.controller = SimpleSwitchAPI(self.thrift_port)
+        self.cpu_port =  self.topo.get_cpu_port_index(self.sw_name)
         self.init()
 
     def init(self):
-        a = 1
+        self.knock_counter = 0
+        self.add_mirror(100) # DPI: mirror_id = 100 TODO: use other mirror ID for knocking?
+        filter = Filter(self.controller, self.sw_name)
+        port_knocker = Port_knocker(self.controller)
+
+    def add_mirror(self, mirror_id):
+        if self.cpu_port:
+            self.controller.mirroring_add(mirror_id, self.cpu_port)
+            print('mirror_id={} added to cpu_port={}'.format(mirror_id, self.cpu_port))
+
+    def recv_msg_knock(self, pkt):
+        self.knock_counter = self.knock_counter + 1
+        print('Received knock packet number {}'.format(self.knock_counter))
+        packet = Ether(str(pkt))
+
+        if packet.type == 0x1234:
+            #show packet that got access trough knocking
+            print'passed knocking test:'    
+
 
     def run(self):
         script = path.basename(__file__)
         print('{}: Controller.run() called on {}'.format(script, self.sw_name))
 
-        # while True:
-        #     print('{} is running'.format(script))
-        #     time.sleep(5)
+        # Knocking
+        cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
+        print('{}: Start Knocking listening on cpu_port_intf={}'.format(script, cpu_port_intf))
+        sniff(iface=cpu_port_intf, prn=self.recv_msg_knock)
+
+
+class Filter:
+    #mstaehli
+    def __init__(self, controller,sw_name):
+        self.sw_name = sw_name
+        self.controller = controller
+        self.set_table_defaults()
+        self.set_whitelist_tcp_port()
+        self.set_blacklist_srcIP()
+        self.set_blacklist_dstIP()
+
+    def set_table_defaults(self):
+        #print '*************controller values fir:', self.sw_name
+        self.controller.table_set_default("whitelist_tcp_dst_port", "drop", [])
+        #print "set table defaults whitelist"
+        self.controller.table_set_default("blacklist_src_ip","NoAction",[])
+        #print "set table defaults black src"
+        self.controller.table_set_default("blacklist_dst_ip","NoAction",[])
+        #print "set table defaults black dst"
+
+    def set_whitelist_tcp_port(self):
+        #read in txt with ports
+        file_path = path.relpath("filters/ext2in_whitelist_tcp_dst_ports.txt")
+        with open(file_path,'r') as wPorts_f:
+            wPorts_l = wPorts_f.readlines()
+            #set all ports to no action..
+            for port in wPorts_l:
+                self.controller.table_add("whitelist_tcp_dst_port", "NoAction", [str(port)])
+                #print 'port {} added to white list'.format(port.replace('\n',''))
+
+    def set_blacklist_srcIP(self):
+        #read blacklist file
+        file_path = path.relpath("filters/ext2in_blacklist_srcIP.txt")
+        with open(file_path,'r') as bIP_f:
+            bIP_l = bIP_f.readlines()
+            randomPrio = 1
+            for ip in bIP_l:
+                #self.controller.table_add("blacklist_src_ip", "drop", [str(ip)])
+                self.controller.table_add("blacklist_src_ip", "drop", [str(ip)],[],str(randomPrio))
+                randomPrio += 1
+                #print 'ip {} added to black list ex2in'.format(ip.replace('\n',''))
+
+    def set_blacklist_dstIP(self):
+        #read blacklist file
+        file_path = path.relpath("filters/in2ext_blacklist_dstIP.txt")
+        with open(file_path,'r') as bIP_f:
+            bIP_l = bIP_f.readlines()
+            randomPrio = 1
+            for ip in bIP_l:
+                #self.controller.table_add("blacklist_dst_ip", "drop", [str(ip)])
+                self.controller.table_add("blacklist_dst_ip", "drop", [str(ip)],[],str(randomPrio))
+                randomPrio += 1
+                #print 'ip {} added to black list in2ex'.format(ip.replace('\n',''))
+
+class Port_knocker:
+    #mstaehli
+    def __init__(self, controller):
+        self.controller = controller
+        self.knocking_sequence = [100, 101, 102, 103]
+        self.delta_time = 10000000 #ns -->10sec
+        self.set_table_defaults()
+        self.set_table_knocking_rules()
+        self.set_table_secret_entries()
+
+
+    def set_table_defaults(self):
+        #set table default
+        self.controller.table_set_default("knocking_rules", "out_of_order_knock", [])
+        self.controller.table_set_default("secret_entries","NoAction",[])
+
+    def set_table_knocking_rules(self):
+        #set table knocking sequence
+        counter = 1
+        for port in self.knocking_sequence:
+            self.controller.table_add("knocking_rules", "port_rule", [str(port)], [str(self.delta_time), str(counter), str(len(self.knocking_sequence))])
+            #print 'table_add knocking_rules port_rule {0} --> {1} {2} {3}'.format(port, self.delta_time, counter, len(self.knocking_sequence))
+            counter += 1
+
+    def set_table_secret_entries(self):
+            self.controller.table_add("secret_entries", "go_trough_secret_port", ["10.0.4.2","10.0.2.1","22","220"], [])
+            #hdr.ipv4.dstAddr : exact; hdr.ipv4.srcAddr : exact; hdr.tcp.dstPort : exact; hdr.tcp.srcPort : exact;
+
 
 if __name__ == "__main__":
     import argparse
