@@ -6,6 +6,9 @@ TODO
 
 
 ## dpi_controller.py
+The script manipulates registers on the firewall, which affects the control flow of the p4 program. If either or both options (DPI and debugging) are used, the p4 program clones the packets and sends them to the controller.
+When the script terminates, the register values are reset to disable the functionality on the firewall.
+ 
 ### DPI
 This controller can set the probability for which a flow gets selected with the first SYN packet and then log certain flows according to it. For example for a probability of 50%:
 ```
