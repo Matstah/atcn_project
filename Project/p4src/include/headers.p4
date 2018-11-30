@@ -29,7 +29,7 @@ header udp_t{
     bit<16> dstPort;
     bit<16> udp_length;
     bit<16> checksum;
-}
+} // 8 Bytes
 
 header tcp_t{
     bit<16> srcPort;
@@ -63,15 +63,12 @@ header dpi_t { // DPI
 } // 14 Bytes
 
 header knocker_t{
-    bit<32> srcAddr;
-    bit<32> dstAddr;
-    bit<16> srcPort;
-    bit<8> protocol;
-}//11 bytes
+    bit<16> knock_payload;
+}//2 bytes
 
 struct metadata {
-    bit<8> clone_reason; //1:DPI //2:port knocking
-
+    bit<8> clone_id; //1:DPI //2:port knocking
+    bit<1> accept;
     // DPI
     bit<1> debugging;
     bit<1> dpi_activated;

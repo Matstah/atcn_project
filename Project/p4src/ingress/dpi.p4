@@ -2,6 +2,7 @@
 
 //
 action clone_for_dpi() {
+    meta.clone_id = 1;
     meta.ingress_port = standard_metadata.ingress_port;
     clone3(CloneType.I2E, 100, meta);
 }

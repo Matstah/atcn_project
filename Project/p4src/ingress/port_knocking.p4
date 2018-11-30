@@ -28,7 +28,7 @@ action delete_knock_state(){
 }
 
 action send_controller_open_sesame(){
-    meta.clone_reason = 2;
+    meta.clone_id = 2;
     meta.knock_srcPort = hdr.udp.srcPort;
     clone3(CloneType.I2E, 100, meta);
 }
@@ -59,7 +59,7 @@ action out_of_order_knock(){
 }
 
 action go_trough_secret_port(){
-
+    meta.accept = 1;
 }
 
 //table port knocking
