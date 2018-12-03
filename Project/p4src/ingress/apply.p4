@@ -24,7 +24,7 @@ if (
                     //setting meta.accept=1 on hit
                 }
                 if(meta.accept == 0){
-                    hash_packet();
+                    hash_extern_tcp_packet();
                     known_flows.read(meta.flow_is_known, meta.flow_id);
                     time_stamps.read(meta.max_time, meta.flow_id);
 
@@ -101,7 +101,7 @@ if (
                         }
                     }
                     //statefull firewall
-                    hash_packet();
+                    hash_extern_udp_packet();
                     known_flows.read(meta.flow_is_known, meta.flow_id);
                     time_stamps.read(meta.max_time, meta.flow_id);
                     if (meta.flow_is_known != 1) {
@@ -141,7 +141,7 @@ else if (
                 return;
             }
             if(hdr.tcp.isValid()){
-                hash_packet();
+                hash_intern_tcp_packet();
                 if (hdr.tcp.syn == 1){
                     time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_TCP);
                     known_flows.write(meta.flow_id, 1);
@@ -150,7 +150,7 @@ else if (
                     time_stamps.write(meta.flow_id, 0);
                 }
             }else if(hdr.udp.isValid()){
-                hash_packet();
+                hash_intern_udp_packet();
                 // only save UDP flow if the packet is not a one-off (if source Port is not 0) and thus awaits a response
                 if(hdr.udp.srcPort != 0){
                     known_flows.write(meta.flow_id, 1);

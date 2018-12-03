@@ -44,7 +44,19 @@ control MyIngress(inout headers hdr,
         mark_to_drop();
     }
 
-    action hash_packet() {
+    action hash_intern_tcp_packet() {
+        hash(meta.flow_id,
+            HashAlgorithm.crc16,
+            (bit<1>)0,
+            { hdr.ipv4.srcAddr,
+              hdr.ipv4.dstAddr,
+               hdr.tcp.srcPort,
+               hdr.tcp.dstPort,
+               hdr.ipv4.protocol},
+            (bit<16>)1024);
+    }
+
+    action hash_intern_udp_packet() {
         hash(meta.flow_id,
             HashAlgorithm.crc16,
             (bit<1>)0,
@@ -52,6 +64,30 @@ control MyIngress(inout headers hdr,
               hdr.ipv4.dstAddr,
                hdr.udp.srcPort,
                hdr.udp.dstPort,
+               hdr.ipv4.protocol},
+            (bit<16>)1024);
+    }
+
+    action hash_extern_tcp_packet() {
+        hash(meta.flow_id,
+            HashAlgorithm.crc16,
+            (bit<1>)0,
+            { hdr.ipv4.dstAddr,
+              hdr.ipv4.srcAddr,
+               hdr.tcp.dstPort,
+               hdr.tcp.srcPort,
+               hdr.ipv4.protocol},
+            (bit<16>)1024);
+    }
+
+    action hash_extern_udp_packet() {
+        hash(meta.flow_id,
+            HashAlgorithm.crc16,
+            (bit<1>)0,
+            { hdr.ipv4.dstAddr,
+              hdr.ipv4.srcAddr,
+               hdr.udp.dstPort,
+               hdr.udp.srcPort,
                hdr.ipv4.protocol},
             (bit<16>)1024);
     }

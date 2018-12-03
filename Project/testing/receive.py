@@ -4,12 +4,13 @@ import os
 import argparse
 import logging as log
 
-from scapy.all import sniff, get_if_list, Ether, get_if_hwaddr, IP, TCP, Raw, Packet, BitField, bind_layers
+from scapy.all import sniff, get_if_list, Ether, get_if_hwaddr, IP, TCP, UDP, Raw, Packet, BitField, bind_layers
 
 LAYER_MAP = {
     'ethernet': Ether,
     'ip': IP,
-    'tcp': TCP
+    'tcp': TCP,
+    'udp': UDP
 }
 
 def get_if():
