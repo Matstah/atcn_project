@@ -14,8 +14,8 @@ def red(str):
 class Controller(object):
 
     def __init__(self, sw_name):
-
-        self.topo = Topology(db="topology.db")
+        self.script_path = path.split(path.abspath(__file__))[0]
+        self.topo = Topology(db=self.script_path + "/../topology.db")
         self.sw_name = sw_name
         self.thrift_port = self.topo.get_thrift_port(sw_name)
         self.controller = SimpleSwitchAPI(self.thrift_port)
@@ -40,7 +40,7 @@ class Controller(object):
 
         if packet.type == 0x1234:
             #show packet that got access trough knocking
-            print'passed knocking test:'    
+            print'passed knocking test:'
 
 
     def run(self):
@@ -56,6 +56,7 @@ class Controller(object):
 class Filter:
     #mstaehli
     def __init__(self, controller,sw_name):
+        self.script_path = path.split(path.abspath(__file__))[0]
         self.sw_name = sw_name
         self.controller = controller
         self.set_table_defaults()
@@ -74,7 +75,7 @@ class Filter:
 
     def set_whitelist_tcp_port(self):
         #read in txt with ports
-        file_path = path.relpath("filters/ext2in_whitelist_tcp_dst_ports.txt")
+        file_path = self.script_path + "/../filters/ext2in_whitelist_tcp_dst_ports.txt"
         with open(file_path,'r') as wPorts_f:
             wPorts_l = wPorts_f.readlines()
             #set all ports to no action..
@@ -84,7 +85,7 @@ class Filter:
 
     def set_blacklist_srcIP(self):
         #read blacklist file
-        file_path = path.relpath("filters/ext2in_blacklist_srcIP.txt")
+        file_path = self.script_path + "/../filters/ext2in_blacklist_srcIP.txt"
         with open(file_path,'r') as bIP_f:
             bIP_l = bIP_f.readlines()
             randomPrio = 1
@@ -96,7 +97,7 @@ class Filter:
 
     def set_blacklist_dstIP(self):
         #read blacklist file
-        file_path = path.relpath("filters/in2ext_blacklist_dstIP.txt")
+        file_path = self.script_path + "/../filters/in2ext_blacklist_dstIP.txt"
         with open(file_path,'r') as bIP_f:
             bIP_l = bIP_f.readlines()
             randomPrio = 1

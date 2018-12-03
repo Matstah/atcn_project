@@ -1,19 +1,20 @@
 // egress apply
 
 // DPI
-if (standard_metadata.instance_type == 1){
-    hdr.dpi.setValid();
-    hdr.dpi.srcAddr = hdr.ipv4.srcAddr;
-    hdr.dpi.dstAddr = hdr.ipv4.dstAddr;
-    hdr.dpi.ingress_port = (bit<16>)meta.ingress_port;
-    hdr.dpi.flow_id = (bit<32>) 777; // TODO: use meta.flow_id
-}
-
 if(standard_metadata.instance_type == 1){
     if (meta.clone_reason == 1){
-        // TODO: add DPI here
+        // DPI
+        hdr.dpi.setValid();
+        hdr.dpi.srcAddr = hdr.ipv4.srcAddr;
+        hdr.dpi.dstAddr = hdr.ipv4.dstAddr;
+        hdr.dpi.ingress_port = (bit<16>) meta.ingress_port;
+        hdr.dpi.flow_id = (bit<32>) meta.flow_id;
+        hdr.dpi.debug = meta.debugging;
+        hdr.dpi.inspect = meta.dpi_activated;
+        hdr.dpi.unused = (bit<6>) 0;
     }
-    if (meta.clone_reason == 2){
+    else if (meta.clone_reason == 2){
+        // Port Knocking
         hdr.knocker.setValid();
         hdr.knocker.srcAddr = hdr.ipv4.srcAddr;
         hdr.knocker.dstAddr = hdr.ipv4.dstAddr;

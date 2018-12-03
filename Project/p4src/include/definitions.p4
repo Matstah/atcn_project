@@ -1,5 +1,4 @@
 const bit<16> TYPE_IPV4 = 0x800;
-const bit<16> DPI_TYPE = 0x4321; // TODO: Can be removed I think..?
 const bit<16> KNOCK_TYPE =  0x1234;
 
 #define KNOCK_SLOTS 256

@@ -1,9 +1,10 @@
 import nnpy
 import struct
+import subprocess
 from p4utils.utils.topology import Topology
 from p4utils.utils.sswitch_API import SimpleSwitchAPI
 from scapy.all import Ether, sniff, Packet, BitField
-from os import path, makedirs
+from os import path, makedirs, chmod, chown
 import traceback
 from time import time
 import Dpi
@@ -34,6 +35,9 @@ class Controller(object):
         self.debug = debug
         self.cpu_port =  self.topo.get_cpu_port_index(self.sw_name)
         self.controller = SimpleSwitchAPI(self.thrift_port)
+        self.uid = int(subprocess.check_output(['id', '-u', 'p4']))
+        self.gid = int(subprocess.check_output(['id', '-g', 'p4']))
+        #print('user p4: user id={}, group id={}'.format(self.uid, self.gid))
         self.init()
 
     def init(self):
@@ -48,7 +52,8 @@ class Controller(object):
 
     def create_log_folder(self):
         if not path.exists(self.file_path):
-            makedirs(self.file_path)
+            makedirs(self.file_path, 0o777)
+            chown(self.file_path, self.uid, self.gid)
 
     def _set_register(self, register, index, value):
         self.controller.register_write('{}.{}'.format(INGRESS_NAME, register), index, value)
@@ -72,32 +77,39 @@ class Controller(object):
         return '{}/{}'.format(path.split(path.abspath(__file__))[0], DPI_FOLDER_NAME)
 
     # d = dict with content of dpi parsing
+    # file format: dpi_<time>_<ip1>and<ip2>-flow<id>
     def get_flow_file(self, d):
         flow = d['flow_id']
-        src = d['src']
-        dst = d['dst']
         if flow not in self.log_files:
-            self.log_files[flow] = '{}/{}{}and{}-flow{}-start{}'.format(
-                self.file_path,
-                DPI_BASE_FILENAME,
-                src, dst,
-                flow, int(time())
+            self.log_files[flow] = '{path}/{base}{time}_{ip1}and{ip2}-flow{id}'.format(
+                path=self.file_path,
+                base=DPI_BASE_FILENAME,
+                ip1=d['src'],
+                ip2=d['dst'],
+                id=flow,
+                time=int(time())
             )
+            # first time: create file and change ownership and permissions
+            with open(self.log_files[flow], 'w+') as log:
+                log.close()
+            chown(self.log_files[flow], self.uid, self.gid)
+            chmod(self.log_files[flow], 0o666)
+
         return self.log_files[flow]
 
     # append the content to the file of the specified flow
     def log_dpi(self, content, d):
         file = self.get_flow_file(d)
-        with open(file, 'a') as log:
+        with open(file, 'a+') as log:
             log.write(content)
             log.close() # TODO: maybe move this to the end of the script?
 
     def recv_msg_dpi(self, pkt):
         self.dpi_counter = self.dpi_counter + 1
         res, d = Dpi.handle_dpi(pkt, self.dpi_counter)
-        if self.debug:
+        if self.debug and d['debug']:
             print(res)
-        if bool(self.inspection_probability):
+        if bool(self.inspection_probability) and d['inspect']:
             self.log_dpi(res, d)
 
     def run(self):

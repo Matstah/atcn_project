@@ -51,16 +51,15 @@ header tcp_t{
     bit<16> urgentPtr;
 }
 
-struct learn_t {
-
-}
-
 header dpi_t { // DPI
     bit<32> srcAddr;
     bit<32> dstAddr;
     bit<16> ingress_port;
     bit<32> flow_id;
-} // 14 Bytes
+    bit<1> debug;
+    bit<1> inspect;
+    bit<6> unused;
+} // 15 Bytes
 
 header knocker_t{
     bit<32> srcAddr;
@@ -91,7 +90,6 @@ struct metadata {
     bit<32> flow_id; // TODO: check bit length // also used for DPI
     bit<1> flow_is_known;
     bit<48> max_time;
-    learn_t learn;
 }
 
 struct headers {

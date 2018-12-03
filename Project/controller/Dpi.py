@@ -4,7 +4,15 @@ import socket, struct
 # Packet description
 class DpiHeader(Packet):
     name = 'DpiHeader'
-    fields_desc = [BitField('srcIpAddr',0,32), BitField('dstIpAddr',0,32), BitField('ingress_port',0,16), BitField('flow_id',0,32)]
+    fields_desc = [
+        BitField('srcIpAddr',0,32),
+        BitField('dstIpAddr',0,32),
+        BitField('ingress_port',0,16),
+        BitField('flow_id',0,32),
+        BitField('debug',0,1),
+        BitField('inspect',0,1),
+        BitField('unused',0,6)
+    ]
 
 # stringify DPI content
 # d = dict from parse_dpi
@@ -15,6 +23,8 @@ src={src}
 dst={dst}
 port={port}
 flow_id={flow_id}
+debug={debug}
+inspect={inspect}
 
 PAYLOAD:
 {payload}
@@ -27,7 +37,9 @@ def parse_dpi(dpi):
         'dst': socket.inet_ntoa(struct.pack('!L', dpi.dstIpAddr)),
         'port': dpi.ingress_port,
         'flow_id': dpi.flow_id,
-        'payload': dpi.payload
+        'payload': dpi.payload,
+        'debug': bool(dpi.debug),
+        'inspect': bool(dpi.inspect)
     }
 
 # Handeling of packet
@@ -35,8 +47,7 @@ LAYER_ORDER = ['ethernet', 'ip', 'tcp']
 LAYER_MAP = {
     'ethernet': Ether,
     'ip': IP,
-    'tcp': TCP,
-    'dpi': DpiHeader
+    'tcp': TCP
 }
 
 # prepares a string of the packet inluding the dpi content
@@ -61,13 +72,15 @@ def handle_dpi(pkt, count):
         'dst': '0.0.0.0',
         'port': -1,
         'flow_id': -1,
-        'payload': ''
+        'payload': '',
+        'debug': None,
+        'inspect': None
     }
-    if(payload):
+    try:
         dpi = DpiHeader(payload)
         dpi_dict = parse_dpi(dpi)
         text = text + stringify_dpi(dpi_dict) + '\n'
-    else:
+    except:
         text = text + 'Could not extract DPI information and payload!\n'
     text = text + '-'*10 + '\n'
 
