@@ -80,22 +80,47 @@ class Controller(object):
     # file format: dpi_<time>_<ip1>and<ip2>-flow<id>
     def get_flow_file(self, d):
         flow = d['flow_id']
+        is_new = d['new_flow']
+        create = False
         if flow not in self.log_files:
-            self.log_files[flow] = '{path}/{base}{time}_{ip1}and{ip2}-flow{id}'.format(
+            count = 1
+            file_name = '{path}/{base}{time}_{ip1}and{ip2}-flow{id}_{count}'.format(
                 path=self.file_path,
                 base=DPI_BASE_FILENAME,
                 ip1=d['src'],
                 ip2=d['dst'],
                 id=flow,
-                time=int(time())
+                time=int(time()),
+                count=count
             )
-            # first time: create file and change ownership and permissions
-            with open(self.log_files[flow], 'w+') as log:
-                log.close()
-            chown(self.log_files[flow], self.uid, self.gid)
-            chmod(self.log_files[flow], 0o666)
+            self.log_files[flow] = [[file_name, count]]
+            create = True
+        else:
+            # flow_id already seen once
+            if is_new:
+                # flow is new, so append to array with new name (old count +1)
+                count = self.log_files[flow][-1][1] + 1
+                file_name = '{path}/{base}{time}_{ip1}and{ip2}-flow{id}_{count}'.format(
+                    path=self.file_path,
+                    base=DPI_BASE_FILENAME,
+                    ip1=d['src'],
+                    ip2=d['dst'],
+                    id=flow,
+                    time=int(time()),
+                    count=count
+                )
+                self.log_files[flow].append([file_name, count])
+                create = True
 
-        return self.log_files[flow]
+        if create:
+            # first time: create file and change ownership and permissions
+            with open(self.log_files[flow][-1][0], 'w+') as log:
+                log.close()
+            chown(self.log_files[flow][-1][0], self.uid, self.gid)
+            chmod(self.log_files[flow][-1][0], 0o666)
+
+        # return the last file name (might have been created just now)
+        return self.log_files[flow][-1][0]
 
     # append the content to the file of the specified flow
     def log_dpi(self, content, d):
