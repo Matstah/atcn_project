@@ -1,7 +1,6 @@
 // ingress apply
 
 meta.accept = 0;
-
 //extern 2 intern
 if (
     standard_metadata.ingress_port == 1 ||
@@ -182,17 +181,23 @@ else if (
                 if(hdr.udp.srcPort != 0){
                     known_flows.write(meta.flow_id, 1);
                     time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_UDP);
+                    random_select_for_dpi();
                 }
             }
         }
+
+
 }
 
 // Clone packet if necessairy TODO: does this interfere with Knocking?
 // TODO: provide debugging possibility here?
-inspected_flows.read(meta.dpi_activated, meta.flow_id);
-if (meta.dpi_activated > 0) {
-    clone_for_dpi();
-}
+if(hdr.ipv4.isValid()) {
+    inspected_flows.read(meta.dpi_activated, meta.flow_id);
+    if (meta.dpi_activated > 0) {
+        clone_for_dpi();
+    }
 
-// Forwarding
-ip_forwarding.apply();
+
+    // Forwarding
+    ip_forwarding.apply();
+}

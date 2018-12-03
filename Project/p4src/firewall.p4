@@ -8,8 +8,8 @@
 #include "include/parsers.p4"
 
 #define TIMESTAMP_WIDTH 48
-#define TIMEOUT_TCP 3000
-#define TIMEOUT_UDP 3000
+#define TIMEOUT_TCP 10000000 // microseconds !! 10 seconds
+#define TIMEOUT_UDP 10000000 // microseconds !! 10 seconds
 #define BLOOM_FILTER_ENTRIES 4096
 #define BLOOM_FILTER_BIT_WIDTH 32
 
