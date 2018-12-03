@@ -54,10 +54,10 @@ control MyDeparser(packet_out packet, in headers hdr) {
         packet.emit(hdr.ipv4);
 
         //Only emited if valid
-        packet.emit(hdr.knocker);
         packet.emit(hdr.udp);
         packet.emit(hdr.tcp);
         packet.emit(hdr.dpi);
+        packet.emit(hdr.knocker);
 
     }
 }
