@@ -2,13 +2,6 @@
 
 meta.accept = 0;
 
-// DPI
-set_dpi_metas();
-if((meta.dpi_activated > 0) || (meta.debugging > 0)) { // Note: conditions can not be moved to actions
-    clone_for_dpi();
-}
-
-
 //extern 2 intern
 if (
     standard_metadata.ingress_port == 1 ||
@@ -29,25 +22,39 @@ if (
                     time_stamps.read(meta.max_time, meta.flow_id);
 
                     if (meta.flow_is_known != 1){
+                        // new flow
                         if(whitelist_tcp_dst_port.apply().hit){
                             // drop tcp packets based on blacklisted port
                             return;
                         }
                     }
-                    if(meta.max_time < standard_metadata.ingress_global_timestamp){
-                        known_flows.write(meta.flow_id, 0);
-                        time_stamps.write(meta.flow_id, 0);
-                        drop(); return;
-                    } else {
-                        //pass packet
-                        time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_TCP);
-                        meta.accept = 1;
+                    else {
+                        // flow is known
+                        if(meta.max_time < standard_metadata.ingress_global_timestamp){
+                            // flow timed out
+                            known_flows.write(meta.flow_id, 0);
+                            time_stamps.write(meta.flow_id, 0);
+
+                            // also forget flow for DPI
+                            bit<1> flow_was_inspected;
+                            inspected_flows.read(flow_was_inspected, meta.flow_id);
+                            if (flow_was_inspected == 1) {
+                                deselect_for_dpi();
+                            }
+
+                            // drop
+                            drop(); return;
+                        }
+                        else {
+                            //pass packet
+                            time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_TCP);
+                            meta.accept = 1;
+                        }
                     }
                 }
             }else if(hdr.udp.isValid()){
-
-                //PORT KNOCKER
                 if(meta.accept == 0){
+                    //PORT KNOCKER
                     switch(knocking_rules.apply().action_run){
                         out_of_order_knock: {
                             if(meta.knock_slot == hdr.ipv4.srcAddr){
@@ -100,17 +107,31 @@ if (
                             }
                         }
                     }
+
                     //statefull firewall
                     hash_extern_udp_packet();
                     known_flows.read(meta.flow_is_known, meta.flow_id);
                     time_stamps.read(meta.max_time, meta.flow_id);
                     if (meta.flow_is_known != 1) {
+                        // flow unknown
                         drop();
                         return;
-                    } else{
+                    }
+                    else {
+                        // flow is known
                         if(meta.max_time < standard_metadata.ingress_global_timestamp) {
+                            // flow timed out
                             known_flows.write(meta.flow_id, 0);
                             time_stamps.write(meta.flow_id, 0);
+
+                            // also forget flow for DPI
+                            bit<1> flow_was_inspected;
+                            inspected_flows.read(flow_was_inspected, meta.flow_id);
+                            if (flow_was_inspected == 1) {
+                                deselect_for_dpi();
+                            }
+
+                            // drop
                             drop(); return;
                         } else {
                             //let packet pass
@@ -118,10 +139,9 @@ if (
                             meta.accept = 1;
                         }
                     }
-
                 }
 
-            if(meta.accept == 0){
+            if(meta.accept == 0){ // TODO: second time that meta.accept is checked ?? Why?
                 if(blacklist_src_ip.apply().hit){
                     //drop ingoing packet: blacklisted ip, not allow to access server
                     return;
@@ -131,6 +151,8 @@ if (
     }
 }
 //intern 2 extern
+// traffic generated internally is assumed to be "well-behaved" to some extent
+// TODO: internally started traffic is not inspected
 else if (
     standard_metadata.ingress_port == 4 ||
     standard_metadata.ingress_port == 5 ||
@@ -146,8 +168,10 @@ else if (
             if(hdr.tcp.isValid()){
                 hash_intern_tcp_packet();
                 if (hdr.tcp.syn == 1){
+                    //first time traffic gets from inside to outside.. opens/ sets flow_is_known to 1, such that flow can enter from outside in.
                     time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_TCP);
                     known_flows.write(meta.flow_id, 1);
+                    random_select_for_dpi();
                 } else if (hdr.tcp.fin == 1){
                     known_flows.write(meta.flow_id, 0);
                     time_stamps.write(meta.flow_id, 0);
@@ -161,7 +185,14 @@ else if (
                 }
             }
         }
-    }
+}
+
+// Clone packet if necessairy TODO: does this interfere with Knocking?
+// TODO: provide debugging possibility here?
+inspected_flows.read(meta.dpi_activated, meta.flow_id);
+if (meta.dpi_activated > 0) {
+    clone_for_dpi();
+}
 
 // Forwarding
 ip_forwarding.apply();

@@ -51,16 +51,16 @@ header tcp_t{
     bit<16> urgentPtr;
 }
 
-struct learn_t {
-
-}
-
 header dpi_t { // DPI
     bit<32> srcAddr;
     bit<32> dstAddr;
     bit<16> ingress_port;
     bit<32> flow_id;
-} // 14 Bytes
+    bit<1> debug;
+    bit<1> inspect;
+    bit<1> new_flow;
+    bit<5> unused;
+} // 15 Bytes
 
 header knocker_t{
     bit<16> knock_payload;
@@ -72,6 +72,7 @@ struct metadata {
     // DPI
     bit<1> debugging;
     bit<1> dpi_activated;
+    bit<1> flow_is_new;
     port_t ingress_port; // DPI, because cloning resets all metadata
 
     //port knocking part
@@ -92,7 +93,6 @@ struct metadata {
     bit<32> counter_two;
     bit<1> flow_is_known;
     bit<48> max_time;
-    learn_t learn;
 }
 
 struct headers {

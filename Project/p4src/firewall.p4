@@ -35,6 +35,7 @@ control MyIngress(inout headers hdr,
     // index = 0: prob. for a new flow to be inspected
     register<bit<7>>(1) inspection_probability;
     register<bit<1>>(4096) known_flows;
+    register<bit<1>>(4096) inspected_flows;
     register<bit<TIMESTAMP_WIDTH>>(4096) time_stamps;
     register<bit<BLOOM_FILTER_BIT_WIDTH>>(BLOOM_FILTER_ENTRIES) bloom_filter;
 

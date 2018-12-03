@@ -19,13 +19,13 @@ sudo dpi_controller.py -p 50
 ```
 sets the probability to 50% by setting the appropriate register on the firewall. From then on the firewall will select with a probability of 50% if a new flow should be monitored. If yes, the firewall will clone the packets of the flow and send them to the controller. The controller then logs the flow in a file of the following format in `./dpi_log`:
 ```
-dpi_<ip1>and<ip2>-flow<id>-start<time_of_first_log>
-dpi_10.0.3.1and10.0.4.2-flow777-start1543316132
+dpi_<time>_<ip1>and<ip2>-flow<id>
+dpi_1543581262_10.0.1.1and10.0.4.1-flow823
 ```
-where one can see the two parties of the communication with `ip1` and `ip2` directly in the filename. The flow id is also shown in the name. The start time ensures, that for a new start of the controller a new file is written. Additionally this gives an immediate hint to the user, when the flow started.
+where one can see the two parties of the communication with `ip1` and `ip2` directly in the filename. The flow id is also shown in the name. The start time ensures, that for a new start of the controller a new file is written. Additionally this gives an immediate hint to the user, when the flow started and the files are ordered by creation time inherently.
 Separate files per flow also gives the ability to follow a inspected flow live with:
 ```
-tail -f dpi_log/dpi_10.0.3.1and10.0.4.2-flow777-start1543316132
+tail -f dpi_log/dpi_1543581262_10.0.1.1and10.0.4.1-flow823
 ```
 
 ### Debugging functionality
