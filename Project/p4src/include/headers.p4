@@ -87,6 +87,10 @@ struct metadata {
 
     // stateless part
     bit<32> flow_id; // TODO: check bit length // also used for DPI
+    bit<32> hash_output_one;
+    bit<32> hash_output_two;
+    bit<32> counter_one;
+    bit<32> counter_two;
     bit<1> flow_is_known;
     bit<48> max_time;
 }
