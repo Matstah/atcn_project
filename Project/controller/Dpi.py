@@ -1,4 +1,4 @@
-from scapy.all import Ether, IP, TCP, Packet, BitField
+from scapy.all import Ether, IP, TCP, UDP, ICMP, Packet, BitField
 import socket, struct
 
 # Packet description
@@ -43,11 +43,13 @@ def parse_dpi(dpi):
     }
 
 # Handeling of packet
-LAYER_ORDER = ['ethernet', 'ip', 'tcp']
+LAYER_ORDER = ['ethernet', 'ip', 'tcp', 'udp']
 LAYER_MAP = {
     'ethernet': Ether,
     'ip': IP,
-    'tcp': TCP
+    'tcp': TCP,
+    'udp': UDP,
+    'ICMP': ICMP
 }
 
 # prepares a string of the packet inluding the dpi content
