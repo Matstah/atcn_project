@@ -20,4 +20,8 @@ if(standard_metadata.instance_type == 1){
         hdr.udp.udp_length =0;
         truncate((bit<32>)42); //14 ether +20 ip+ 8 udp= 42
     }
+    if (meta.clone_id == 3){
+        //syn_defender: tell controller to accept this src.
+
+    }
 }

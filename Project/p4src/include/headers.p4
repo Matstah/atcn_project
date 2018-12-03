@@ -13,7 +13,7 @@ header ipv4_t {
     bit<4>    ihl;
     bit<6>    dscp;
     bit<2>    ecn;
-    bit<16>   totalLen;
+    bit<16>   totalLen; //including header and data
     bit<16>   identification;
     bit<3>    flags;
     bit<13>   fragOffset;
@@ -35,7 +35,7 @@ header tcp_t{
     bit<16> srcPort;
     bit<16> dstPort;
     bit<32> seqNo;
-    bit<32> ackNo;
+    bit<32> ackNo; //12bytes
     bit<4>  dataOffset;
     bit<4>  res;
     bit<1>  cwr;
@@ -45,11 +45,11 @@ header tcp_t{
     bit<1>  psh;
     bit<1>  rst;
     bit<1>  syn;
-    bit<1>  fin;
+    bit<1>  fin; //2
     bit<16> window;
     bit<16> checksum;
-    bit<16> urgentPtr;
-}
+    bit<16> urgentPtr; //6
+}//20
 
 header dpi_t { // DPI
     bit<32> srcAddr;
@@ -63,8 +63,8 @@ header dpi_t { // DPI
 } // 15 Bytes
 
 header knocker_t{
-    bit<16> knock_payload;
-}//2 bytes
+    bit<48> knock_payload;
+}//6 bytes
 
 struct metadata {
     bit<8> clone_id; //1:DPI //2:port knocking
@@ -93,6 +93,10 @@ struct metadata {
     bit<32> counter_two;
     bit<1> flow_is_known;
     bit<48> max_time;
+
+    //syn defense
+    bit<32> syn_hash;
+    bit<48> syn_timestamp;
 }
 
 struct headers {

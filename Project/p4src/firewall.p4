@@ -138,6 +138,7 @@ control MyIngress(inout headers hdr,
     #include "ingress/ingress_filter.p4"
     #include "ingress/egress_filter.p4"
     #include "ingress/port_knocking.p4"
+    #include "ingress/syn_defense.p4"
 
     apply {
         #include "ingress/apply.p4"
@@ -161,6 +162,43 @@ control MyEgress(inout headers hdr,
 
 control MyComputeChecksum(inout headers hdr, inout metadata meta) {
      apply {
+         update_checksum(
+	    hdr.ipv4.isValid(),
+            { hdr.ipv4.version,
+	          hdr.ipv4.ihl,
+              hdr.ipv4.dscp,
+              hdr.ipv4.ecn,
+              hdr.ipv4.totalLen,
+              hdr.ipv4.identification,
+              hdr.ipv4.flags,
+              hdr.ipv4.fragOffset,
+              hdr.ipv4.ttl,
+              hdr.ipv4.protocol,
+              hdr.ipv4.srcAddr,
+              hdr.ipv4.dstAddr },
+              hdr.ipv4.hdrChecksum,
+              HashAlgorithm.csum16);
+
+        update_checksum(
+            hdr.tcp.isValid(),
+            {hdr.tcp.srcPort,
+                hdr.tcp.dstPort,
+                hdr.tcp.seqNo,
+                hdr.tcp.ackNo,
+                hdr.tcp.dataOffset,
+                hdr.tcp.res,
+                hdr.tcp.cwr,
+                hdr.tcp.ece,
+                hdr.tcp.urg,
+                hdr.tcp.ack,
+                hdr.tcp.psh,
+                hdr.tcp.rst,
+                hdr.tcp.syn,
+                hdr.tcp.fin,
+                hdr.tcp.window,
+                hdr.tcp.urgentPtr},
+                hdr.tcp.checksum,
+                HashAlgorithm.csum16);
 
      }
 }

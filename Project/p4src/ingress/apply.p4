@@ -22,10 +22,11 @@ if (
                     time_stamps.read(meta.max_time, meta.flow_id);
 
                     if (meta.flow_is_known != 1){
-                        // new flow
+                        // unknown/new flow from ext2int
                         if(whitelist_tcp_dst_port.apply().hit){
-                            // drop tcp packets based on blacklisted port
+                            // packet droped based on white list hit
                             return;
+                            //next: check ip on src blacklist
                         }
                     }
                     else {
@@ -113,9 +114,10 @@ if (
                     known_flows.read(meta.flow_is_known, meta.flow_id);
                     time_stamps.read(meta.max_time, meta.flow_id);
                     if (meta.flow_is_known != 1) {
-                        // flow unknown
+                        // new/unknown udp flow from ext2int
                         drop();
                         return;
+                        //TODO: port whitelist for udp!
                     }
                     else {
                         // flow is known
@@ -140,11 +142,36 @@ if (
                         }
                     }
                 }
-
-            if(meta.accept == 0){ // TODO: second time that meta.accept is checked ?? Why?
-                if(blacklist_src_ip.apply().hit){
-                    //drop ingoing packet: blacklisted ip, not allow to access server
-                    return;
+            }
+        if(meta.accept == 0){ // TODO: second time that meta.accept is checked ?? Why?
+            if(blacklist_src_ip.apply().hit){
+                //drop ingoing packet: blacklisted ip, not allow to access server
+                return;
+            }
+            //here packet passed ip src blacklist, port whitelist, is not a known flow and does not have secret port:
+            //let it access our server.
+            if(hdr.tcp.isValid()){
+                    //syn cookies
+                if(hdr.tcp.syn == 1){
+                    //test clone to check number
+                    //test end
+                    set_cookie_in_ack_number();
+                    swaps_to_reply();
+                }else{
+                    compute_cookie_hash();
+                    bit<32> ack = hdr.tcp.ackNo-1;
+                    if(ack == meta.syn_hash){
+                        //source is valid- not spoofed.. tell controller to put grand access
+                        //reply with RST = 1
+                        meta.clone_id = 3; //TODO, but don't know how..
+                        clone3(CloneType.I2E, 100, meta);
+                        reply_rst();
+                    }else{
+                        //we received some ack that is not okey.. or has timed out.
+                       reply_rst();
+                       //drop();
+                       //return;
+                    }
                 }
             }
         }
