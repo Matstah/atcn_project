@@ -36,7 +36,7 @@ control MyIngress(inout headers hdr,
     register<bit<7>>(1) inspection_probability;
     register<bit<1>>(4096) known_flows;
     register<bit<TIMESTAMP_WIDTH>>(4096) time_stamps;
-    register<bit<BLOOM_FILTER_BIT_WIDTH>>(BLOOM_FILTER_ENTRIES) bloom_filter
+    register<bit<BLOOM_FILTER_BIT_WIDTH>>(BLOOM_FILTER_ENTRIES) bloom_filter;
 
     // Options:
     // index = 0: to be set if debugging should be activated (uses DPI)
@@ -56,8 +56,8 @@ control MyIngress(inout headers hdr,
         meta.counter_one = meta.counter_one + 1;
         meta.counter_two = meta.counter_two + 1;
 
-        bloom_filter.write(meta.flow_id_32, meta.counter_one)
-        bloom_filter.write(meta.flow_id, meta.counter_two)
+        bloom_filter.write(meta.flow_id_32, meta.counter_one);
+        bloom_filter.write(meta.flow_id, meta.counter_two);
     }
 
     action hash_bloom_tcp_packet_32() {
