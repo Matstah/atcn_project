@@ -26,7 +26,6 @@ class Controller(object):
         self.knock_counter = 0
         self.add_mirror(100) # DPI: mirror_id = 100 TODO: use other mirror ID for knocking?
         filter = Filter(self.controller, self.sw_name)
-        port_knocker = Port_knocker(self.controller)
 
     def add_mirror(self, mirror_id):
         if self.cpu_port:
@@ -102,35 +101,6 @@ class Filter:
                 self.controller.table_add("blacklist_dst_ip", "drop", [str(ip)],[],str(randomPrio))
                 randomPrio += 1
                 #print 'ip {} added to black list in2ex'.format(ip.replace('\n',''))
-
-
-class Port_knocker:
-    #mstaehli
-    def __init__(self, controller):
-        self.controller = controller
-        self.knocking_sequence = [100, 101, 102, 103]
-        self.delta_time = 10000000 #ns -->10sec
-        self.set_table_defaults()
-        self.set_table_knocking_rules()
-        self.set_table_secret_entries()
-
-
-    def set_table_defaults(self):
-        #set table default
-        self.controller.table_set_default("knocking_rules", "out_of_order_knock", [])
-        self.controller.table_set_default("secret_entries","NoAction",[])
-
-    def set_table_knocking_rules(self):
-        #set table knocking sequence
-        counter = 1
-        for port in self.knocking_sequence:
-            self.controller.table_add("knocking_rules", "port_rule", [str(port)], [str(self.delta_time), str(counter), str(len(self.knocking_sequence))])
-            #print 'table_add knocking_rules port_rule {0} --> {1} {2} {3}'.format(port, self.delta_time, counter, len(self.knocking_sequence))
-            counter += 1
-
-    def set_table_secret_entries(self):
-            self.controller.table_add("secret_entries", "go_trough_secret_port", ["10.0.4.2","10.0.2.1","22","220"], [])
-            #hdr.ipv4.dstAddr : exact; hdr.ipv4.srcAddr : exact; hdr.tcp.dstPort : exact; hdr.tcp.srcPort : exact;
 
 
 if __name__ == "__main__":

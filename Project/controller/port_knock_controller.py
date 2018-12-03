@@ -13,10 +13,13 @@ import Dpi
 ###########
 class Controller(object):
 
-    def __init__(self, sw_name,):
+    def __init__(self, sw_name,port_sequence, secret_port, timeout):
 
         self.topo = Topology(db=path.split(path.abspath(__file__))[0] + "/../topology.db")
         self.sw_name = sw_name
+        self.secret_port = secret_port
+        self.knocking_sequence = port_sequence
+        self.delta_time = timeout
         self.thrift_port = self.topo.get_thrift_port(sw_name)
         self.cpu_port =  self.topo.get_cpu_port_index(self.sw_name)
         self.controller = SimpleSwitchAPI(self.thrift_port)
@@ -24,14 +27,28 @@ class Controller(object):
 
     def init(self):
         self.knock_counter = 0
-        secret_port =  3141
-        #self.create_log_folder()
+
+        self.set_table_defaults()
+        self.set_table_knocking_rules()
+
         self.add_mirror(100) # DPI: mirror_id = 100
 
     def add_mirror(self, mirror_id):
         if self.cpu_port:
             self.controller.mirroring_add(mirror_id, self.cpu_port)
             print('mirror_id={} added to cpu_port={}'.format(mirror_id, self.cpu_port))
+
+    def set_table_defaults(self):
+        self.controller.table_set_default("knocking_rules", "out_of_order_knock", [])
+        self.controller.table_set_default("secret_entries","NoAction",[])
+
+    def set_table_knocking_rules(self):
+        #set table knocking sequence
+        counter = 1
+        for port in self.knocking_sequence:
+            self.controller.table_add("knocking_rules", "port_rule", [str(port)], [str(self.delta_time), str(counter), str(len(self.knocking_sequence))])
+            #print 'table_add knocking_rules port_rule {0} --> {1} {2} {3}'.format(port, self.delta_time, counter, len(self.knocking_sequence))
+            counter += 1
 
     def allow_entrance(self,pkt):
         srcIP = pkt['IP'].src
@@ -69,9 +86,11 @@ def red(str):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
+    # sudo testing/port_knock_controller.py -ps 100 101 102 103 -s 3143 -t 5000000
     parser.add_argument('--sw', type=str, required=False, default="fir", help='firewall name [default fir]')
-    parser.add_argument('-p', '--probability', type=int, required=False, default=0, help='probability for a flow to get inspected and written to a file [default: 0 = no inspection]')
-    parser.add_argument('-d', '--debug', action='store_true', help='If activated, each packet gets sent to the controller and is printed by the script')
+    parser.add_argument('--port_sequence', '-ps', required=False, nargs ='+', default = [100,101,102,103], help='define port knocking sequence')
+    parser.add_argument('--secret_port', '-s', required = False, default = 3141, type=int, help='set secret port' )
+    parser.add_argument('--timeout', '-t', required = False, default = 5000000, type=int, help='set timeout between knocks')
     args = parser.parse_args()
 
     controller = None
@@ -79,7 +98,7 @@ if __name__ == "__main__":
     # NOTE: this try-except-else stuff could be handled better, but whatever...
     # NOTE: also the opening and closing of files is not optimal...
     try:
-        controller = Controller(args.sw)
+        controller = Controller(args.sw, args.port_sequence, args.secret_port, args.timeout)
         controller.run()
     except:
         print(red('CONTROLLER TERMINATED UNEXPECTEDLY! WITH ERROR:'))

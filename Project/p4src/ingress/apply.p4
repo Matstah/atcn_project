@@ -105,7 +105,8 @@ if (
                     known_flows.read(meta.flow_is_known, meta.flow_id);
                     time_stamps.read(meta.max_time, meta.flow_id);
                     if (meta.flow_is_known != 1) {
-                        //TODO: whitelist?
+                        drop();
+                        return;
                     } else{
                         if(meta.max_time < standard_metadata.ingress_global_timestamp) {
                             known_flows.write(meta.flow_id, 0);

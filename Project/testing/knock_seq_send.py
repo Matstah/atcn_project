@@ -84,6 +84,7 @@ def send(dst, knock_seq, sleep, showPacket=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
+    #sudo python testing/knock_seq_send.py --local --src hi2 --dst he2 -k 100 101 102 103 --sleep 1
     # args for local execution
     parser.add_argument('--local', action='store_true', required=False, help='If script should run from local prompt')
     parser.add_argument('--src', type=str, required=False, help='Source host NAME in case of a local call')
