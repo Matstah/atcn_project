@@ -2,8 +2,11 @@
 All these scripts can be found at `~/atcn-project/Project/controller` and the commands are expected to be executed from there in the following documentation.
 
 ## firewall_controller.py
-TODO
+This script connects to the firewall and waits for a packet from it. This packet contains information about which src has sucessfully completed a knocking sequence. The controller puts the (srcIP,dstIP, srcPort, secret port) onto a white list table, so the firewall will let this tupel (tcp) trough in the future.
 
+```
+sudo port_knock_controller.py
+```
 
 ## dpi_controller.py
 The script manipulates registers on the firewall, which affects the control flow of the p4 program. If either or both options (DPI and debugging) are used, the p4 program clones the packets and sends them to the controller.

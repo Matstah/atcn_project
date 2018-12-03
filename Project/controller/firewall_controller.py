@@ -30,17 +30,14 @@ class Controller(object):
 
     def add_mirror(self, mirror_id):
         if self.cpu_port:
-            self.controller.mirroring_add(mirror_id, self.cpu_port)
+            self.controller.mirroring_add(mirror_id, self.cpu_port) #with the mirror id, we can set a specific port for cloning
             print('mirror_id={} added to cpu_port={}'.format(mirror_id, self.cpu_port))
 
     def recv_msg_knock(self, pkt):
         self.knock_counter = self.knock_counter + 1
         print('Received knock packet number {}'.format(self.knock_counter))
-        packet = Ether(str(pkt))
+        pkt.show() #prints packet to cli
 
-        if packet.type == 0x1234:
-            #show packet that got access trough knocking
-            print'passed knocking test:'
 
 
     def run(self):
@@ -50,7 +47,7 @@ class Controller(object):
         # Knocking
         cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
         print('{}: Start Knocking listening on cpu_port_intf={}'.format(script, cpu_port_intf))
-        sniff(iface=cpu_port_intf, prn=self.recv_msg_knock)
+        sniff(iface=cpu_port_intf, prn=self.recv_msg_knock) #prn says to send pack to function
 
 
 class Filter:
@@ -106,6 +103,7 @@ class Filter:
                 self.controller.table_add("blacklist_dst_ip", "drop", [str(ip)],[],str(randomPrio))
                 randomPrio += 1
                 #print 'ip {} added to black list in2ex'.format(ip.replace('\n',''))
+
 
 class Port_knocker:
     #mstaehli

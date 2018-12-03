@@ -2,7 +2,7 @@
 
 // DPI
 if(standard_metadata.instance_type == 1){
-    if (meta.clone_reason == 1){
+    if (meta.clone_id == 1){
         // DPI
         hdr.dpi.setValid();
         hdr.dpi.srcAddr = hdr.ipv4.srcAddr;
@@ -13,15 +13,10 @@ if(standard_metadata.instance_type == 1){
         hdr.dpi.inspect = meta.dpi_activated;
         hdr.dpi.unused = (bit<6>) 0;
     }
-    else if (meta.clone_reason == 2){
-        // Port Knocking
-        hdr.knocker.setValid();
-        hdr.knocker.srcAddr = hdr.ipv4.srcAddr;
-        hdr.knocker.dstAddr = hdr.ipv4.dstAddr;
-        hdr.knocker.srcPort = meta.knock_srcPort;
-        hdr.knocker.protocol = hdr.ipv4.protocol;
-        hdr.ethernet.etherType = KNOCK_TYPE;
-        hdr.ipv4.setInvalid(); //removes header
-        truncate((bit<32>)25); //14 + 11 =25
+    if (meta.clone_id == 2){
+        //KNOCKER
+        hdr.udp.dstPort = 0; //used as id to tell controller it is a pnock acceter..
+        hdr.udp.udp_length =0;
+        truncate((bit<32>)42); //14 ether +20 ip+ 8 udp= 42
     }
 }
