@@ -47,19 +47,6 @@ control MyIngress(inout headers hdr,
         mark_to_drop();
     }
 
-    action update_bloom_filter(){
-        hash_bloom_tcp_packet_32();
-        hash_bloom_tcp_packet();
-        bloom_filter.read(meta.counter_one, meta.hash_output_one);
-        bloom_filter.read(meta.counter_two, meta.hash_output_two);
-
-        meta.counter_one = meta.counter_one + 1;
-        meta.counter_two = meta.counter_two + 1;
-
-        bloom_filter.write(meta.flow_id_32, meta.counter_one);
-        bloom_filter.write(meta.flow_id, meta.counter_two);
-    }
-
     action hash_bloom_tcp_packet_32() {
         hash(meta.hash_output_one,
             HashAlgorithm.crc32,
@@ -130,6 +117,19 @@ control MyIngress(inout headers hdr,
                hdr.udp.srcPort,
                hdr.ipv4.protocol},
             (bit<16>)1024);
+    }
+
+    action update_bloom_filter(){
+        hash_bloom_tcp_packet_32();
+        hash_bloom_tcp_packet();
+        bloom_filter.read(meta.counter_one, meta.hash_output_one);
+        bloom_filter.read(meta.counter_two, meta.hash_output_two);
+
+        meta.counter_one = meta.counter_one + 1;
+        meta.counter_two = meta.counter_two + 1;
+
+        bloom_filter.write(meta.hash_output_one, meta.counter_one);
+        bloom_filter.write(meta.hash_output_two, meta.counter_two);
     }
 
     #include "ingress/ip_forwarding.p4"
