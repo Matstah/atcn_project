@@ -58,7 +58,8 @@ header dpi_t { // DPI
     bit<32> flow_id;
     bit<1> debug;
     bit<1> inspect;
-    bit<6> unused;
+    bit<1> new_flow;
+    bit<5> unused;
 } // 15 Bytes
 
 header knocker_t{
@@ -71,6 +72,7 @@ struct metadata {
     // DPI
     bit<1> debugging;
     bit<1> dpi_activated;
+    bit<1> flow_is_new;
     port_t ingress_port; // DPI, because cloning resets all metadata
 
     //port knocking part

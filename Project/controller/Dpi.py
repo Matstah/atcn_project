@@ -11,7 +11,8 @@ class DpiHeader(Packet):
         BitField('flow_id',0,32),
         BitField('debug',0,1),
         BitField('inspect',0,1),
-        BitField('unused',0,6)
+        BitField('new_flow',0,1),
+        BitField('unused',0,5)
     ]
 
 # stringify DPI content
@@ -19,6 +20,7 @@ class DpiHeader(Packet):
 def stringify_dpi(d):
     s = """
 DPI:
+{info}
 src={src}
 dst={dst}
 port={port}
@@ -32,7 +34,13 @@ PAYLOAD:
     return s
 
 def parse_dpi(dpi):
+    if(dpi.new_flow):
+        info = 'FLOW IS NEW'
+    else:
+        info = 'flow continues'
+
     return {
+        'info': info,
         'src': socket.inet_ntoa(struct.pack('!L', dpi.srcIpAddr)),
         'dst': socket.inet_ntoa(struct.pack('!L', dpi.dstIpAddr)),
         'port': dpi.ingress_port,
@@ -70,6 +78,7 @@ def handle_dpi(pkt, count):
 
     # the last layer's payload contains the dpi_header
     dpi_dict = {
+        'info': 'no special info',
         'src': '0.0.0.0',
         'dst': '0.0.0.0',
         'port': -1,

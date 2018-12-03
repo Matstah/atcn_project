@@ -11,7 +11,8 @@ if(standard_metadata.instance_type == 1){
         hdr.dpi.flow_id = (bit<32>) meta.flow_id;
         hdr.dpi.debug = meta.debugging;
         hdr.dpi.inspect = meta.dpi_activated;
-        hdr.dpi.unused = (bit<6>) 0;
+        hdr.dpi.new_flow = meta.flow_is_new;
+        hdr.dpi.unused = (bit<5>) 0;
     }
     if (meta.clone_id == 2){
         //KNOCKER
