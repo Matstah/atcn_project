@@ -142,7 +142,7 @@ if (
                     }
                 }
             }
-        if(meta.accept == 0){ // TODO: second time that meta.accept is checked ?? Why?
+        if(meta.accept == 0){ // TODO: second time that meta.accept is checked ?? Why?--> because of new filters applied..
             if(blacklist_src_ip.apply().hit){
                 //drop ingoing packet: blacklisted ip, not allow to access server
                 return;
@@ -150,7 +150,7 @@ if (
             //here packet passed ip src blacklist, port whitelist, is not a known flow and does not have secret port:
             //let it access our server.
             if(hdr.tcp.isValid()){
-                    //syn cookies
+                //SYN COOKIES SYN-DEFENSE
                 if(hdr.tcp.syn == 1){
                     //test clone to check number
                     //test end
