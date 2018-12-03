@@ -106,16 +106,18 @@ if (
                     time_stamps.read(meta.max_time, meta.flow_id);
                     if (meta.flow_is_known != 1) {
                         //TODO: whitelist?
+                    } else{
+                        if(meta.max_time < standard_metadata.ingress_global_timestamp) {
+                            known_flows.write(meta.flow_id, 0);
+                            time_stamps.write(meta.flow_id, 0);
+                            drop(); return;
+                        } else {
+                            //let packet pass
+                            time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_UDP);
+                            meta.accept = 1;
+                        }
                     }
-                    if(meta.max_time < standard_metadata.ingress_global_timestamp) {
-                        known_flows.write(meta.flow_id, 0);
-                        time_stamps.write(meta.flow_id, 0);
-                        drop(); return;
-                    } else {
-                        //let packet pass
-                        time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_UDP);
-                        meta.accept = 1;
-                    }
+
                 }
 
             if(meta.accept == 0){

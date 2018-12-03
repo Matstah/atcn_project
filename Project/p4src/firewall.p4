@@ -10,6 +10,8 @@
 #define TIMESTAMP_WIDTH 48
 #define TIMEOUT_TCP 3000
 #define TIMEOUT_UDP 3000
+#define BLOOM_FILTER_ENTRIES 4096
+#define BLOOM_FILTER_BIT_WIDTH 32
 
 /*************************************************************************
 ************   C H E C K S U M    V E R I F I C A T I O N   *************
@@ -34,6 +36,7 @@ control MyIngress(inout headers hdr,
     register<bit<7>>(1) inspection_probability;
     register<bit<1>>(4096) known_flows;
     register<bit<TIMESTAMP_WIDTH>>(4096) time_stamps;
+    register<bit<BLOOM_FILTER_BIT_WIDTH>>(BLOOM_FILTER_ENTRIES) bloom_filter
 
     // Options:
     // index = 0: to be set if debugging should be activated (uses DPI)
@@ -42,6 +45,43 @@ control MyIngress(inout headers hdr,
 
     action drop() {
         mark_to_drop();
+    }
+
+    action update_bloom_filter(){
+        hash_bloom_tcp_packet_32();
+        hash_bloom_tcp_packet();
+        bloom_filter.read(meta.counter_one, meta.hash_output_one);
+        bloom_filter.read(meta.counter_two, meta.hash_output_two);
+
+        meta.counter_one = meta.counter_one + 1;
+        meta.counter_two = meta.counter_two + 1;
+
+        bloom_filter.write(meta.flow_id_32, meta.counter_one)
+        bloom_filter.write(meta.flow_id, meta.counter_two)
+    }
+
+    action hash_bloom_tcp_packet_32() {
+        hash(meta.hash_output_one,
+            HashAlgorithm.crc32,
+            (bit<1>)0,
+            { hdr.ipv4.srcAddr,
+              hdr.ipv4.dstAddr,
+               hdr.tcp.srcPort,
+               hdr.tcp.dstPort,
+               hdr.ipv4.protocol},
+            (bit<16>)1024);
+    }
+
+    action hash_bloom_tcp_packet() {
+        hash(meta.hash_output_two,
+            HashAlgorithm.crc16,
+            (bit<1>)0,
+            { hdr.ipv4.srcAddr,
+              hdr.ipv4.dstAddr,
+               hdr.tcp.srcPort,
+               hdr.tcp.dstPort,
+               hdr.ipv4.protocol},
+            (bit<16>)1024);
     }
 
     action hash_intern_tcp_packet() {
