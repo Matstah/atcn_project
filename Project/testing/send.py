@@ -42,7 +42,7 @@ def get_mac(host, option=None):
     else:
         return topo.get_host_mac(host)
 
-def send(dst, packets, sleep, showPacket=False):
+def send(dst, packets, sleep, udp, showPacket=False):
     log.debug('Sending {} packets to {}'.format(packets, dst))
     ip_addr = get_host_ip(dst)
     iface = get_if()
@@ -62,7 +62,10 @@ def send(dst, packets, sleep, showPacket=False):
     for _ in range(packets):
         count = count + 1
         pkt = Ether(src=ether_src, dst=ether_dst)
-        pkt = pkt / IP(dst=ip_addr) / TCP(dport=80, sport=sport) / "Hello {}. #{}".format(dst, count)
+        if udp:
+            pkt = pkt / IP(dst=ip_addr) / UDP(dport=53, sport=sport) / "Hello {}. #{}".format(dst, count)
+        else:
+            pkt = pkt / IP(dst=ip_addr) / TCP(dport=80, sport=sport) / "Hello {}. #{}".format(dst, count)
         sendp(pkt, iface=iface, verbose=False)
         if showPacket:
             print('The following packet was sent:')
@@ -82,6 +85,7 @@ if __name__ == "__main__":
     # args for actual functionality
     parser.add_argument('-d', '--dst',     type=str, required=True, help='Destination NAME or IPv4')
     parser.add_argument('-p', '--packets', type=int, required=False, default=1, help='Number of packets')
+    parser.add_argument('-u', '--udp', action='store_true', required=False, help='If protocol should be UDP instead of TCP')
     #TODO parser.add_argument('--receive', action='store_true', required='False', help='Trigger receive terminals to open directly [only from local]')
     parser.add_argument('--sleep', type=float, required=False, default=0.0, help='Sleep time between packets')
     parser.add_argument('--show', action='store_true', required=False, help='If set, all sent packets are printed')
@@ -113,5 +117,5 @@ if __name__ == "__main__":
         # load globals
         topo = Topology(db="/home/p4/atcn-project/Project/topology.db")
 
-        send(args.dst, args.packets, args.sleep, showPacket=args.show)
+        send(args.dst, args.packets, args.sleep, args.udp, showPacket=args.show)
 # END MAIN
