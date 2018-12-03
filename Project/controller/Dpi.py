@@ -27,6 +27,7 @@ port={port}
 flow_id={flow_id}
 debug={debug}
 inspect={inspect}
+new_flow={new_flow}
 
 PAYLOAD:
 {payload}
@@ -47,7 +48,8 @@ def parse_dpi(dpi):
         'flow_id': dpi.flow_id,
         'payload': dpi.payload,
         'debug': bool(dpi.debug),
-        'inspect': bool(dpi.inspect)
+        'inspect': bool(dpi.inspect),
+        'new_flow': dpi.new_flow
     }
 
 # Handeling of packet
@@ -85,7 +87,8 @@ def handle_dpi(pkt, count):
         'flow_id': -1,
         'payload': '',
         'debug': None,
-        'inspect': None
+        'inspect': None,
+        'new_flow': True
     }
     try:
         dpi = DpiHeader(payload)

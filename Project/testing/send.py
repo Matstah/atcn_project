@@ -42,7 +42,7 @@ def get_mac(host, option=None):
     else:
         return topo.get_host_mac(host)
 
-def send(dst, packets, sleep, udp, showPacket=False):
+def send(dst, packets, sleep, udp, i2e=False, showPacket=False):
     log.debug('Sending {} packets to {}'.format(packets, dst))
     ip_addr = get_host_ip(dst)
     iface = get_if()
@@ -57,15 +57,16 @@ def send(dst, packets, sleep, udp, showPacket=False):
     log.info("sending on interface %s to %s" % (iface, str(ip_addr)))
 
     # the actual work
-    sport = random.randint(49152,65535)
+    # sport = random.randint(49152,65535)
+    sport = 101 if i2e else 105;
+    dport = 105 if i2e else 101;
+    msg = "Hello {}. #{}"
+    transport = UDP(dport=dport, sport=sport) if udp else TCP(dport=dport, sport=sport)
     count = 0
     for _ in range(packets):
         count = count + 1
         pkt = Ether(src=ether_src, dst=ether_dst)
-        if udp:
-            pkt = pkt / IP(dst=ip_addr) / UDP(dport=53, sport=sport) / "Hello {}. #{}".format(dst, count)
-        else:
-            pkt = pkt / IP(dst=ip_addr) / TCP(dport=80, sport=sport) / "Hello {}. #{}".format(dst, count)
+        pkt = pkt / IP(dst=ip_addr) / transport / msg.format(dst, count)
         sendp(pkt, iface=iface, verbose=False)
         if showPacket:
             print('The following packet was sent:')
@@ -93,6 +94,8 @@ if __name__ == "__main__":
     # other args
     parser.add_argument('--debug', action='store_true', required=False, help='Activate debug messages')
 
+    parser.add_argument('--i2e', action='store_true', required=False)
+
     # parse arguments
     args = parser.parse_args()
 
@@ -117,5 +120,5 @@ if __name__ == "__main__":
         # load globals
         topo = Topology(db="/home/p4/atcn-project/Project/topology.db")
 
-        send(args.dst, args.packets, args.sleep, args.udp, showPacket=args.show)
+        send(args.dst, args.packets, args.sleep, args.udp, args.i2e, showPacket=args.show)
 # END MAIN

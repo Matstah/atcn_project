@@ -44,9 +44,9 @@ class Controller(object):
         print('{}: Controller.run() called on {}'.format(script, self.sw_name))
 
         # Knocking
-        cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
-        print('{}: Start Knocking listening on cpu_port_intf={}'.format(script, cpu_port_intf))
-        sniff(iface=cpu_port_intf, prn=self.recv_msg_knock) #prn says to send pack to function
+        # cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
+        # print('{}: Start Knocking listening on cpu_port_intf={}'.format(script, cpu_port_intf))
+        # sniff(iface=cpu_port_intf, prn=self.recv_msg_knock) #prn says to send pack to function
 
 
 class Filter:
