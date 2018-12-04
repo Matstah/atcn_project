@@ -36,6 +36,7 @@ class Server():
         self.node_infos = {}
         self.ip = self.get_info(self.name, 'IP')
         self.interface = get_interface()
+        self.flows = {}
 
     # SERVER HELPER
     def get_info(self, node, info):
@@ -46,18 +47,59 @@ class Server():
         return self.node_infos[node][info]
 
     # SERVER FUNCS
+    def answer_syn(self, pkt):
+        log.debug('answer_syn called')
+        log.debug('packet content:\n' + pkt.show(dump=True))
+        eth = pkt.getlayer(Ether)
+        ip = pkt.getlayer(IP)
+        tcp = pkt.getlayer(TCP)
+
+        # register flow
+        id = '{}:{}'.format(ip.src, tcp.sport)
+        self.flows[id] = Ether(src=eth.dst, dst=eth.src)/IP(src=ip.dst, dst=ip.src)
+
+        # send (SYN)ACK
+        dport=tcp.sport
+        sport=tcp.dport
+        seq = 300
+        SYNACK = TCP(sport=sport, dport=dport, flags = 'A', seq=seq, ack=(tcp.seq+1))
+        answer = self.flows[id] / SYNACK
+        log.debug('prepared answer:\n' + answer.show(dump=True))
+
+        # ack all received data
+        while True:
+            data_pkt = srp1(answer, timeout=3, verbose=0)
+            # data_pkt.show()
+            seq = seq + 1
+
+            try:
+                tcp = data_pkt.getlayer(TCP)
+            except:
+                break
+            print(tcp.payload)
+            # print(tcp.seq)
+            ACK = TCP(sport=sport, dport=dport, flags = 'A', seq=seq, ack=(tcp.seq+1))
+            answer = self.flows[id] / ACK
+            time.sleep(1) # waits a second to ack the data packet
+
+        print('CONNECTION TO {} TERMINATED'.format(id))
+
+
+
     def send(dst):
         ## TODO:
         a = 1
 
+
     # SERVER RUN
     def run(self):
-        # TODO:
-        print(self.node_infos)
-        print(self.interface)
-        while True:
-            print('Server is running')
-            time.sleep(3.0)
+        log.debug('wait for SYN on interface ' + self.interface)
+        sniff(iface=self.interface, prn=lambda x: self.answer_syn(x), count=1)
+
+        print('WE ARE DONE HERE')
+        # while True:
+        #     print('Server is running')
+        #     time.sleep(3.0)
 
 # MAIN
 if __name__ == '__main__':

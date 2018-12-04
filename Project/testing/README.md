@@ -7,3 +7,15 @@ The current secret port combination is set via the firewall_controller, but to b
 
 `sudo python testing/knock_seq_send.py --local --src <srcIP> --dst <dstIP> --sleep <time between knocks> --k <port1> ... <portN> `
 `sudo python testing/knock_seq_send.py --local --src <srcIP> --dst <dstIP> --k <port1> ... <portN>`
+
+## client and server (TCP handshake)
+### server
+The server script is supposed to run on the `ser` host, but the server can basically run anywhere, but the scripts are written towards this use case.
+```
+sudo python server.py --local
+```
+The server expects a tcp handshake from a single host and then 'acks' the data content that it receives from the host.
+
+### client
+The client tries to establish a connection with the server and then sends some data packets.
+TODO: check if a fin packet arrives and then try again to test getting through the firewall!
