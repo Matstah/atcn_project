@@ -5,6 +5,7 @@ import socket, struct
 class DpiHeader(Packet):
     name = 'DpiHeader'
     fields_desc = [
+        BitField('control_id',0,32), # this is a separate header in p4
         BitField('srcIpAddr',0,32),
         BitField('dstIpAddr',0,32),
         BitField('ingress_port',0,16),
@@ -67,7 +68,7 @@ LAYER_MAP = {
 # also returns parsed dict of the dpi
 def handle_dpi(pkt, count):
     text = 'Received DPI packet number {}\n'.format(count)
-
+    pkt.show()
     # show packet
     text = text + pkt.show(dump=True) + '\n'
 
@@ -92,9 +93,12 @@ def handle_dpi(pkt, count):
     }
     try:
         dpi = DpiHeader(payload)
+        if dpi.control_id != 1:
+            return ['None', 'None']
         dpi_dict = parse_dpi(dpi)
         text = text + stringify_dpi(dpi_dict) + '\n'
     except:
+        print('sdjfhjsdhfjhsdjkfhs')
         text = text + 'Could not extract DPI information and payload!\n'
     text = text + '-'*10 + '\n'
 

@@ -28,7 +28,7 @@ ser_ip = '10.0.4.4'
 
 eth = Ether(src='00:00:0a:00:04:03', dst='00:00:0a:00:04:04')
 
-for i in range(0, 256):
+for i in range(0, 255):
     packet = eth/IP(src=ip_base + str(i), dst=ser_ip)/TCP(sport=RandShort(), dport=80, flags="S")
     print('.', end='')
     sendp(packet, verbose=0)

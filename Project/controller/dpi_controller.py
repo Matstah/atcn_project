@@ -132,6 +132,9 @@ class Controller(object):
     def recv_msg_dpi(self, pkt):
         self.dpi_counter = self.dpi_counter + 1
         res, d = Dpi.handle_dpi(pkt, self.dpi_counter)
+        if res == 'None':
+            return
+        
         if self.debug and d['debug']:
             print(res)
         if bool(self.inspection_probability) and d['inspect']:
