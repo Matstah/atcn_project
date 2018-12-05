@@ -111,6 +111,9 @@ def client_tcp_start(src, dst, packets, sleep, showPacket=False):
     connection_established = False
     while not connection_established:
         ACK, seq = handshake_part1(eth, ip, sport, dport, seq)
+        sleepy_time = 1
+        print('sleep for {} seconds'.format(sleepy_time))
+        time.sleep(sleepy_time)
         ACK, seq, connection_established = handshake_part2(eth, ip, sport, dport, ACK, seq)
         log.debug('Connection established? ' + str(connection_established))
         time.sleep(2.0)

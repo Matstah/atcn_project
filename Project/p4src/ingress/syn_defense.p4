@@ -1,7 +1,7 @@
 action compute_cookie_hash(){
     // ack-1== meta.syn_hash.. then we got the thing back within 10 seconds.
     // cut of 1'000'000'000'000'000'000'000'000 bits 16mio 25 digits: it is like division by 2 power of 25..=16mio=16seconds slot..
-    meta.syn_timestamp = standard_metadata.ingress_global_timestamp >> 25;
+    meta.syn_timestamp = standard_metadata.ingress_global_timestamp >> 24;
     //TODO: bit slicing might be way better!
 
     hash(meta.syn_hash,
