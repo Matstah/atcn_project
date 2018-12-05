@@ -48,8 +48,8 @@ action reply_rst(){
     hdr.tcp.rst=1;
     hdr.tcp.syn=0;
     hdr.tcp.ack=1;
-    bit<32> temp = hdr.tcp.ackNo + 1;
-    hdr.tcp.ackNo = hdr.tcp.seqNo + 1; //
+    bit<32> temp = hdr.tcp.ackNo;
+    hdr.tcp.ackNo = hdr.tcp.seqNo + 1;
     hdr.tcp.seqNo = temp;
     hdr.ipv4.ttl = 64;
 }
