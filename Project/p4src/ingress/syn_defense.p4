@@ -2,6 +2,8 @@ action compute_cookie_hash(){
     // ack-1== meta.syn_hash.. then we got the thing back within 10 seconds.
     // cut of 1'000'000'000'000'000'000'000'000 bits 16mio 25 digits: it is like division by 2 power of 25..=16mio=16seconds slot..
     meta.syn_timestamp = standard_metadata.ingress_global_timestamp >> 25;
+    //TODO: bit slicing might be way better!
+
     hash(meta.syn_hash,
         HashAlgorithm.crc32,
         (bit<1>)0,
@@ -28,17 +30,17 @@ action set_cookie_in_ack_number(){
 
 action swaps_to_reply(){
     //swap ports
-    bit<16> tPort = hdr.tcp.srcPort;
+    bit<16> srcPort = hdr.tcp.srcPort;
     hdr.tcp.srcPort = hdr.tcp.dstPort;
-    hdr.tcp.dstPort = tPort;
+    hdr.tcp.dstPort = srcPort;
     //swap ip
-    bit<32> tIP =hdr.ipv4.srcAddr;
+    bit<32> srcIP =hdr.ipv4.srcAddr;
     hdr.ipv4.srcAddr = hdr.ipv4.dstAddr;
-    hdr.ipv4.dstAddr = tIP;
+    hdr.ipv4.dstAddr = srcIP;
     //swap ethernet
-    macAddr_t tMac = hdr.ethernet.srcAddr;
+    macAddr_t srcMac = hdr.ethernet.srcAddr;
     hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
-    hdr.ethernet.dstAddr = tMac;
+    hdr.ethernet.dstAddr = srcMac;
 }
 
 action reply_rst(){

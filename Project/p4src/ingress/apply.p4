@@ -22,7 +22,7 @@ if (
 
                     if (meta.flow_is_known != 1){
                         // unknown/new flow from ext2int
-                        if(whitelist_tcp_dst_port.apply().hit){
+                        if(!whitelist_tcp_dst_port.apply().hit){
                             // packet droped based on white list hit
                             return;
                             //next: check ip on src blacklist
@@ -150,10 +150,12 @@ if (
             //here packet passed ip src blacklist, port whitelist, is not a known flow and does not have secret port:
             //let it access our server.
             if(hdr.tcp.isValid()){
+
                 //SYN COOKIES SYN-DEFENSE
                 if(hdr.tcp.syn == 1){
                     //test clone to check number
                     //test end
+                    //clone3(CloneType.I2E, 100, meta);
                     set_cookie_in_ack_number();
                     swaps_to_reply();
                 }else{
@@ -223,7 +225,6 @@ if(hdr.ipv4.isValid()) {
     if (meta.dpi_activated > 0) {
         clone_for_dpi();
     }
-
 
     // Forwarding
     ip_forwarding.apply();
