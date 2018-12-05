@@ -2,6 +2,8 @@
 
 // DPI
 if(standard_metadata.instance_type == 1){
+    hdr.controller.setValid();
+    hdr.controller.type = (bit<32>)meta.clone_id;
     if (meta.clone_id == 1){
         // DPI
         hdr.dpi.setValid();
@@ -16,11 +18,15 @@ if(standard_metadata.instance_type == 1){
     }
     if (meta.clone_id == 2){
         //KNOCKER
+
+        //TODO: change controller, then not needed anymore 
         hdr.udp.dstPort = 0; //used as id to tell controller it is a pnock acceter..
         hdr.udp.udp_length =0;
         truncate((bit<32>)42); //14 ether +20 ip+ 8 udp= 42
     }
     if (meta.clone_id == 3){
+        hdr.ipv4.totalLen = 44;
+        truncate((bit<32>)58);
         //syn_defender: tell controller to accept this src.
 
     }

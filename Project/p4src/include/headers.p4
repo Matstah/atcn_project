@@ -62,9 +62,9 @@ header dpi_t { // DPI
     bit<5> unused;
 } // 15 Bytes
 
-header knocker_t{
-    bit<48> knock_payload;
-}//6 bytes
+header controller_t{
+    bit<32> type;
+}//4 bytes
 
 struct metadata {
     bit<8> clone_id; //1:DPI //2:port knocking
@@ -105,6 +105,6 @@ struct headers {
     tcp_t        tcp;
     udp_t        udp;
 
+    controller_t controller;
     dpi_t        dpi; // DPI
-    knocker_t    knocker;
 }
