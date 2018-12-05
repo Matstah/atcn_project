@@ -74,7 +74,7 @@ def handshake_part2(eth, ip, sport, dport, ACK, seq):
     pkt = eth/ip/ACK
     log.debug('SEND {} with ack={}, seq={}'.format(tcp_flags(pkt), pkt.ack, pkt.seq))
     response = srp1(pkt, verbose=0, timeout=3)
-    log.debug('SEND {} with ack={}, seq={}'.format(tcp_flags(pkt), pkt.ack, pkt.seq))
+    log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(response), response.ack, response.seq))
     type = tcp_flags(response)
     if type == 'ACK':
         seq = seq + 1
