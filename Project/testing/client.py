@@ -45,11 +45,11 @@ def tcp_flags(pkt):
         elif pkt[TCP].flags & 0x3f == 0x12:   # SYN+ACK
             # log.debug("RCV: SYN+ACK")
             return 'SYNACK'
-        elif pkt[TCP].flags & 16 != 0:      # ACK
-            return 'ACK' # TODO: ????
         elif  pkt[TCP].flags & 4 != 0:      # RST
             # log.debug("RCV: RST")
             return 'RST'
+        elif pkt[TCP].flags & 16 != 0:      # ACK
+            return 'ACK' # TODO: ????
         elif pkt[TCP].flags & 0x1 == 1:     # FIN
             # log.debug("RCV: FIN")
             return 'FIN'
@@ -64,7 +64,9 @@ def handshake_part1(eth, ip, sport, dport, seq):
     pkt = eth/ip/SYN
     log.debug('SEND {} with ack={}, seq={}'.format(tcp_flags(pkt), pkt.ack, pkt.seq))
     SYNACK=srp1(pkt, verbose=0, timeout=3) # sends packet and waits for corresponding response
+    log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(SYNACK), SYNACK.ack, SYNACK.seq))
     seq = seq + 1
+    # log.debug('Is new seq == other.ack? ' + str(seq == SYNACK.ack))
     ACK=TCP(sport=sport, dport=dport, flags="A", seq=seq, ack=(SYNACK.seq+1))
     return [ACK, seq]
 
@@ -72,13 +74,14 @@ def handshake_part2(eth, ip, sport, dport, ACK, seq):
     pkt = eth/ip/ACK
     log.debug('SEND {} with ack={}, seq={}'.format(tcp_flags(pkt), pkt.ack, pkt.seq))
     response = srp1(pkt, verbose=0, timeout=3)
+    log.debug('SEND {} with ack={}, seq={}'.format(tcp_flags(pkt), pkt.ack, pkt.seq))
     type = tcp_flags(response)
     if type == 'ACK':
         seq = seq + 1
         ACK=TCP(sport=sport, dport=dport, flags="A", seq=seq, ack=(response.seq+1))
         return [ACK, seq, True]
     else:
-        return [None, None, False]
+        return [None, 100, False]
 
 def client_tcp_start(src, dst, packets, sleep, showPacket=False):
     log.debug('TCP handshake and {} data packets with {}'.format(packets, dst))
@@ -110,7 +113,7 @@ def client_tcp_start(src, dst, packets, sleep, showPacket=False):
         ACK, seq = handshake_part1(eth, ip, sport, dport, seq)
         ACK, seq, connection_established = handshake_part2(eth, ip, sport, dport, ACK, seq)
         log.debug('Connection established? ' + str(connection_established))
-        time.sleep(1.0)
+        time.sleep(2.0)
 
     # send data
     count = 1

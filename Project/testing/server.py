@@ -95,6 +95,9 @@ class Server():
         # RST first handshake to simulate firewall behaviour
         if self.act_as_firewall:
             print('ACT AS FIREWALL')
+            # TODO: basically do what the firewall does with the RST messages for testing
+            # TODO: not really needed yet, because the firewall behaves as it should
+            # TODO: if we implement it, then we have to redo, the above!
 
 
         # ack all received data
