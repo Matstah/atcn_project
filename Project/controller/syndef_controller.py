@@ -44,6 +44,9 @@ class Controller(object):
         if value == 3:
             print'---------------src is validated and accepted to access server----------------------'
             self.allow_entrance(pkt)
+        if value == 4:
+            print('---------------src is getting blacklisted------------------')
+            self.controller.table_add("blacklist_src_ip", "drop", [str(pkt['IP'].src)],[],str(1337)) # Because this src IP can't be blacklisted (or it wouldn't have gotten this far) we can use a random prio for it
 
     def deparse_pack(self, pkt):
         # Handeling of packet

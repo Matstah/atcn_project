@@ -16,7 +16,21 @@ if (
                 }
                 if(source_accepted.apply().hit){
                     //TODO mstaehli: source port checked for heavy hitting
-                    meta.accept = 1;
+                    if(hdr.tcp.syn == 1){
+                        update_bloom_filter();
+                        if(meta.counter_one > PACKET_THRESHOLD && meta.counter_two > PACKET_THRESHOLD) {
+                            // TODO: write to blacklist if this is the case
+                            meta.clone_id = 4;
+                            clone3(CloneType.I2E, 100, meta);
+                            drop();
+                            return;
+                        }
+                        else {
+                            meta.accept = 1;
+                        }
+                    } else {
+                        meta.accept = 1;
+                    }
                 }
                 if(meta.accept == 0){
                     hash_extern_tcp_packet();

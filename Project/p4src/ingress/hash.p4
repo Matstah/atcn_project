@@ -4,11 +4,7 @@ action hash_bloom_tcp_packet_32() {
     hash(meta.hash_output_one,
         HashAlgorithm.crc32,
         (bit<1>)0,
-        { hdr.ipv4.srcAddr,
-          hdr.ipv4.dstAddr,
-           hdr.tcp.srcPort,
-           hdr.tcp.dstPort,
-           hdr.ipv4.protocol},
+        {hdr.ipv4.srcAddr},
         (bit<16>)1024);
 }
 
@@ -16,11 +12,7 @@ action hash_bloom_tcp_packet() {
     hash(meta.hash_output_two,
         HashAlgorithm.crc16,
         (bit<1>)0,
-        { hdr.ipv4.srcAddr,
-          hdr.ipv4.dstAddr,
-           hdr.tcp.srcPort,
-           hdr.tcp.dstPort,
-           hdr.ipv4.protocol},
+        {hdr.ipv4.srcAddr},
         (bit<16>)1024);
 }
 
