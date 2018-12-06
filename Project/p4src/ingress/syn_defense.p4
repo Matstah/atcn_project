@@ -53,3 +53,15 @@ action reply_rst(){
     hdr.tcp.seqNo = temp;
     hdr.ipv4.ttl = 64;
 }
+
+table source_accepted{
+    key = {
+        hdr.ipv4.srcAddr : exact;
+        hdr.ipv4.dstAddr : exact;
+        hdr.tcp.dstPort  : exact;
+    }
+    actions = {
+        NoAction;
+    }
+    size = 16383;
+}

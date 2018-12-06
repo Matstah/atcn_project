@@ -12,8 +12,11 @@ if (
 
             if(hdr.tcp.isValid()){
                 if(secret_entries.apply().hit){
-                    //TODO mstaehli: go to forwarding
-                    //setting meta.accept=1 on hit
+                    //hit action sets meta.accept=1
+                }
+                if(source_accepted.apply().hit){
+                    //TODO mstaehli: source port checked for heavy hitting
+                    meta.accept = 1;
                 }
                 if(meta.accept == 0){
                     hash_extern_tcp_packet();

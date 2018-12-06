@@ -25,11 +25,15 @@ class Controller(object):
     def init(self):
         self.knock_counter = 0
         self.add_mirror(100) # DPI: mirror_id = 100 TODO: use other mirror ID for knocking?
+        self.set_table_defaults()
 
     def add_mirror(self, mirror_id):
         if self.cpu_port:
             self.controller.mirroring_add(mirror_id, self.cpu_port) #with the mirror id, we can set a specific port for cloning
             print('mirror_id={} added to cpu_port={}'.format(mirror_id, self.cpu_port))
+
+    def set_table_defaults(self):
+        self.controller.table_set_default("source_accepted","NoAction",[])
 
     def recv_msg_knock(self, pkt):
         self.knock_counter = self.knock_counter + 1
@@ -67,7 +71,9 @@ class Controller(object):
         dstPort = pkt['TCP'].dport
         print'secret entry is set'
         #hdr.ipv4.dstAddr : exact; hdr.ipv4.srcAddr : exact; hdr.tcp.dstPort(secret Port) : exact; hdr.tcp.srcPort : exact;
-        self.controller.table_add("secret_entries", "go_trough_secret_port", [str(dstIP),str(srcIP),str(dstPort),str(srcPort)], [])
+        self.controller.table_add("source_accepted", "NoAction", [str(srcIP),str(dstIP),str(dstPort)], [])
+        #hdr.ipv4.dstAddr : exact; hdr.ipv4.srcAddr : exact; hdr.tcp.dstPort(secret Port) : exact; hdr.tcp.srcPort : exact;
+        #self.controller.table_add("secret_entries", "go_trough_secret_port", [str(dstIP),str(srcIP),str(dstPort),str(srcPort)], [])
 
     def run(self):
         script = path.basename(__file__)
