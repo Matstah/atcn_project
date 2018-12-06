@@ -53,10 +53,11 @@ def tcp_flags(pkt):
 
 # SERVER
 class Server():
-    def __init__(self, name, firewall):
+    def __init__(self, name, firewall, bad_client):
         self.helper = TopoHelper(TOPO_FILE, disable_print=True)
         self.name = name
         self.act_as_firewall = firewall
+        self.client_is_bad = bad_client
 
         self.node_infos = {}
         self.ip = self.get_info(self.name, 'IP')
@@ -72,6 +73,9 @@ class Server():
         return self.node_infos[node][info]
 
     # SERVER FUNCS
+    def listen_to_syns(self, pkt):
+        log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(pkt), pkt.ack, pkt.seq))
+
     def answer_syn(self, pkt):
         log.debug('answer_syn called')
         # log.debug('packet content:\n' + pkt.show(dump=True))
@@ -100,23 +104,35 @@ class Server():
             # TODO: if we implement it, then we have to redo, the above!
 
 
-        # ack all received data
-        while True:
-            log.debug('SEND {} with ack={}, seq={}'.format(tcp_flags(answer), answer.ack, answer.seq))
+        # ack all received data (or just listen if client is bad)
+        if self.client_is_bad:
+            # finish handshake
             data_pkt = srp1(answer, timeout=3, verbose=0)
-            # data_pkt.show()
+            log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(data_pkt), data_pkt.ack, data_pkt.seq))
             seq = seq + 1
-
-            try:
-                tcp = data_pkt.getlayer(TCP)
-                log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(data_pkt), data_pkt.ack, data_pkt.seq))
-            except:
-                break
-            print(tcp.payload)
-            # print(tcp.seq)
+            tcp = data_pkt.getlayer(TCP)
             ACK = TCP(sport=sport, dport=dport, flags = 'A', seq=seq, ack=(tcp.seq+1))
             answer = self.flows[id] / ACK
-            time.sleep(1) # waits a second to ack the data packet
+            sendp(answer, verbose=0)
+            log.debug('Just listen now...')
+            sniff(iface=self.interface, prn=lambda x: self.listen_to_syns(x))
+        else:
+            while True:
+                log.debug('SEND {} with ack={}, seq={}'.format(tcp_flags(answer), answer.ack, answer.seq))
+                data_pkt = srp1(answer, timeout=3, verbose=0)
+                # data_pkt.show()
+                seq = seq + 1
+
+                try:
+                    tcp = data_pkt.getlayer(TCP)
+                    log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(data_pkt), data_pkt.ack, data_pkt.seq))
+                except:
+                    break
+                print(tcp.payload)
+                # print(tcp.seq)
+                ACK = TCP(sport=sport, dport=dport, flags = 'A', seq=seq, ack=(tcp.seq+1))
+                answer = self.flows[id] / ACK
+                time.sleep(1) # waits a second to ack the data packet
 
         print('CONNECTION TO {} TERMINATED'.format(id))
 
@@ -136,9 +152,10 @@ if __name__ == '__main__':
     parser.add_argument('--local', action='store_true', required=False, help='If script should run from local prompt')
     parser.add_argument('--server', type=str, required=False, default='ser', help='server NAME in case of a local call')
     parser.add_argument('--on_remote', action='store_true', required=False, help='Do not set this flag yourself!!')
+    parser.add_argument('--bad', action='store_true', required=False, help='If we expect a bad client, just print, what you get after handshake')
 
     # other args
-    parser.add_argument('--firewall', action='store_true', required=False, help='Flag to set if server should act like the firewall and send RST after first handshake')
+    parser.add_argument('--firewall', action='store_true', required=False, help='[NOT IMPLEMENTED] Flag to set if server should act like the firewall and send RST after first handshake')
     parser.add_argument('--debug', action='store_true', required=False, help='Activate debug messages')
 
     # parse arguments
@@ -157,6 +174,7 @@ if __name__ == '__main__':
         cmd = ["mx", args.server, 'python'] + sys.argv + ['--on_remote']
         log.debug("Run the following command:\n{}".format(cmd))
         call(cmd)
+        exit(0)
     else:
-        server = Server(args.server, args.firewall)
+        server = Server(args.server, args.firewall, args.bad)
         server.run()

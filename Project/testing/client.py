@@ -83,7 +83,7 @@ def handshake_part2(eth, ip, sport, dport, ACK, seq):
     else:
         return [None, 100, False]
 
-def client_tcp_start(src, dst, packets, sleep, showPacket=False):
+def client_tcp_start(src, dst, packets, sleep, i_am_bad):
     log.debug('TCP handshake and {} data packets with {}'.format(packets, dst))
     src_ip = get_host_ip(src)
     dst_ip = get_host_ip(dst)
@@ -118,18 +118,28 @@ def client_tcp_start(src, dst, packets, sleep, showPacket=False):
         log.debug('Connection established? ' + str(connection_established))
         time.sleep(2.0)
 
-    # send data
-    count = 1
-    while count <= packets:
-        data = eth/ip/ACK/'This is the {}. line!'.format(count)
-        log.debug('SEND ' + tcp_flags(data) + ' with data and ack={}, seq={}'.format(data.ack, data.seq))
-        response = srp1(data, verbose=0, timeout=3)
-        seq = seq + 1
-        log.debug('GOT ' + tcp_flags(response))
-        ACK=TCP(sport=sport, dport=dport, flags="A", seq=seq, ack=(response.seq+1))
-        time.sleep(sleep)
-        count = count + 1
-    log.debug('sent all data')
+    # send data or only SYNs
+    if i_am_bad:
+        for _ in range(packets):
+            SYN=TCP(sport=RandShort(), dport=dport, flags="S", seq=RandShort())
+            attack = eth/ip/SYN
+            log.debug('SEND ' + tcp_flags(attack) + ' with ack={}, seq={}'.format(attack.ack, attack.seq))
+            sendp(attack, verbose=0)
+            time.sleep(0.1)
+        log.debug('sent all SYNs')
+    else:
+        count = 1
+        while count <= packets:
+            data = eth/ip/ACK/'This is the {}. line!'.format(count)
+            log.debug('SEND ' + tcp_flags(data) + ' with data and ack={}, seq={}'.format(data.ack, data.seq))
+            response = srp1(data, verbose=0, timeout=3)
+            seq = seq + 1
+            log.debug('GOT ' + tcp_flags(response))
+            ACK=TCP(sport=sport, dport=dport, flags="A", seq=seq, ack=(response.seq+1))
+            time.sleep(sleep)
+            count = count + 1
+        log.debug('sent all data')
+
 
     # TODO: terminate session? maybe make optional?
 
@@ -146,7 +156,7 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--dst',     type=str, required=False, default='ser', help='Destination NAME or IPv4 [default server]')
     parser.add_argument('-p', '--packets', type=int, required=False, default=5, help='Number of packets AFTER HANDSHAKE [default 5]')
     parser.add_argument('--sleep', type=float, required=False, default=0.1, help='Sleep time between packets [default 0.1]')
-    parser.add_argument('--show', action='store_true', required=False, help='If set, all sent packets are printed')
+    parser.add_argument('--bad', action='store_true', required=False, help='Bad client that only sends SYNs after a successful handshake')
 
     # other args
     parser.add_argument('--debug', action='store_true', required=False, help='Activate debug messages')
@@ -166,9 +176,10 @@ if __name__ == "__main__":
         cmd = ["mx", args.src, 'python'] + sys.argv + ['--on_remote']
         log.debug("Run the following command:\n{}".format(cmd))
         call(cmd)
+        exit(0)
     else:
         # load globals
         topo = Topology(db="/home/p4/atcn-project/Project/topology.db")
 
-        client_tcp_start(args.src, args.dst, args.packets, args.sleep, showPacket=args.show)
+        client_tcp_start(args.src, args.dst, args.packets, args.sleep, args.bad)
 # END MAIN
