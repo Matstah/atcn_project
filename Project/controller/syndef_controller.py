@@ -38,6 +38,7 @@ class Controller(object):
         print'New packet arrived+ {}'.format(self.knock_counter)
         value = self.deparse_pack(pkt)
         if value == 3:
+            print'---------------src is validated and accepted to access server----------------------'
             self.allow_entrance(pkt)
 
     def deparse_pack(self, pkt):
@@ -57,8 +58,7 @@ class Controller(object):
         dpiHeader = DpiHeader(payload)
         dpiHeader.show()
         print 'header value: {}'.format(dpiHeader.dpi_payload)
-
-
+        return dpiHeader.dpi_payload
 
     def allow_entrance(self,pkt):
         srcIP = pkt['IP'].src

@@ -36,26 +36,15 @@ class Controller(object):
         self.knock_counter = self.knock_counter + 1
         print('Received knock packet number {}'.format(self.knock_counter))
         pkt.show() #prints packet to cli
-        self.allow_entrance(pkt)
-
-    def allow_entrance(self,pkt):
-        srcIP = pkt['IP'].src
-        dstIP = pkt['IP'].dst
-        srcPort = pkt['TCP'].sport
-        dstPort = pkt['TCP'].dport
-        print'secret entry is set'
-        #hdr.ipv4.dstAddr : exact; hdr.ipv4.srcAddr : exact; hdr.tcp.dstPort(secret Port) : exact; hdr.tcp.srcPort : exact;
-        self.controller.table_add("secret_entries", "go_trough_secret_port", [str(dstIP),str(srcIP),str(dstPort),str(srcPort)], [])
 
     def run(self):
         script = path.basename(__file__)
         print('{}: Controller.run() called on {}'.format(script, self.sw_name))
 
         # Knocking
-        cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
+        #cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
         # print('{}: Start Knocking listening on cpu_port_intf={}'.format(script, cpu_port_intf))
-        sniff(iface=cpu_port_intf, prn=self.recv_msg_knock) #prn says to send pack to function
-
+        #sniff(iface=cpu_port_intf, prn=self.recv_msg_knock) #prn says to send pack to function
 
 class Filter:
     #mstaehli
