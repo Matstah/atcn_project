@@ -21,7 +21,7 @@ RE_TO_COMPONENT = {
     r"ge": 'external_gateways',
     r"gi": 'internal_gateways',
     r"ext": 'extern_switch',
-    r"int": 'intern_switch'
+    r"int|sw-cpu": 'intern_switch'
 }
 COMPONENT_TO_PARAMS = {
     'external_hosts': {
@@ -135,6 +135,7 @@ class TopoHelper(object):
         for regex, component in RE_TO_COMPONENT.items():
             if (re.match(regex, node)):
                 self.components[component].append(node)
+                return
 
     # gets all components and seperates them into external, internal, server and firewall
     def get_components(self):
@@ -206,8 +207,11 @@ class TopoHelper(object):
         """ END DEBUG """
 
         # draw network nodes with their params
+        my_nodes = []
         for type, components in self.components.items():
+            # print('type={}, components={}'.format(type, components))
             params = COMPONENT_TO_PARAMS[type]
+            my_nodes = my_nodes + components
             nx.draw_networkx_nodes(G, self.positions,
                 node_shape = params['shape'],
                 node_color = params['color'],
@@ -216,9 +220,22 @@ class TopoHelper(object):
             )
 
         # draw all edges
-        nx.draw_networkx_edges(G, self.positions,
-            edge_list = G.edges()
-        )
+        # -- get the necessairy edges
+        # edges = []
+        # for edge in G.edges():
+        #     good = True
+        #     for node in edge:
+        #         if(re.match(r"sw-cpu", node)):
+        #             good = False
+        #     if good:
+        #         edges.append(edge)
+        # # -- draw
+        # print(my_nodes)
+        # print(edges)
+        # nx.draw_networkx_edges(G, self.positions,
+        #     nodelist = my_nodes,
+        #     edge_list = edges
+        # )
 
         # label the nodes
         nx.draw_networkx_labels(G, self.positions,

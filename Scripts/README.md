@@ -13,7 +13,7 @@ python topo_helper.py -h
 
 ## topo_helper.py
 
-Draw or show information about topology.
+Draw [DOES NOT WORK ANYMORE. EDGE LABELS CANNOT BE SHOWN DUE TO ADDITIONAL SWITCH sw-cpu FOR CLONING] or show information about topology.
 
 ### draw topo
 

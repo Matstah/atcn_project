@@ -13,7 +13,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--topo', type=str, default='../Project/topology.db', help='Topology database file')
-    parser.add_argument('-d', '--draw', action='store_true', required=False, help='Flag: draw topology')
+    parser.add_argument('-d', '--draw', action='store_true', required=False, help='Flag: draw topology [DOES NOT WORK ANYMORE]')
     parser.add_argument('-e', '--edge', type=str, required=False, help='Edge label type. Choose from one of [port, ip, mac]')
     parser.add_argument('-i', '--info', action='store_true', required=False, help='Flag: get info of topo')
     parser.add_argument('-t', '--type', type=str, default='all', help='With INFO: show only for one of [external, internal, switches]')
