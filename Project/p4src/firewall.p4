@@ -12,7 +12,7 @@
 #define TIMEOUT_UDP 10000000 // microseconds !! 10 seconds
 #define BLOOM_FILTER_ENTRIES 4096
 #define BLOOM_FILTER_BIT_WIDTH 32
-#define PACKET_THRESHOLD 1000
+#define PACKET_THRESHOLD 10
 
 /*************************************************************************
 ************   C H E C K S U M    V E R I F I C A T I O N   *************
