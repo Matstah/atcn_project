@@ -11,6 +11,10 @@ def red(str):
     code = 91
     return '\033[{}m'.format(code) + str + '\033[0m'
 
+# entrace key is based on src and dst IP
+def get_entrance_key(pkt):
+    return '{}{}'.format(pkt['IP'].src, pkt['IP'].dst)
+
 class Controller(object):
 
     def __init__(self, sw_name):
@@ -20,6 +24,7 @@ class Controller(object):
         self.thrift_port = self.topo.get_thrift_port(sw_name)
         self.controller = SimpleSwitchAPI(self.thrift_port)
         self.cpu_port =  self.topo.get_cpu_port_index(self.sw_name)
+        self.allowed_entrances = {}
         self.init()
 
     def init(self):
@@ -45,8 +50,11 @@ class Controller(object):
             print'---------------src is validated and accepted to access server----------------------'
             self.allow_entrance(pkt)
         if value == 4:
-            print('---------------src is getting blacklisted------------------')
-            self.controller.table_add("blacklist_src_ip", "drop", ['{0}->{0}'.format(pkt['IP'].src)],[],'1337') # Because this src IP can't be blacklisted (or it wouldn't have gotten this far) we can use a random prio for it
+            # print('---------------src is getting blacklisted------------------')
+            # print('return type of table_dump: ' + str(type(self.controller.table_dump('source_accepted'))))
+            # self.controller.table_add("blacklist_src_ip", "drop", ['{0}->{0}'.format(pkt['IP'].src)],[],'1337') # Because this src IP can't be blacklisted (or it wouldn't have gotten this far) we can use a random prio for it
+            print('---------------src is no longer allowed to access server------------------')
+            self.forbid_entrace(pkt)
 
     def deparse_pack(self, pkt):
         # Handeling of packet
@@ -74,9 +82,18 @@ class Controller(object):
         dstPort = pkt['TCP'].dport
         print'secret entry is set'
         #hdr.ipv4.dstAddr : exact; hdr.ipv4.srcAddr : exact; hdr.tcp.dstPort(secret Port) : exact; hdr.tcp.srcPort : exact;
-        self.controller.table_add("source_accepted", "NoAction", [str(srcIP),str(dstIP),str(dstPort)], [])
+        val = self.controller.table_add("source_accepted", "NoAction", [str(srcIP),str(dstIP),str(dstPort)], [])
+        self.allowed_entrances[get_entrance_key(pkt)] = val
         #hdr.ipv4.dstAddr : exact; hdr.ipv4.srcAddr : exact; hdr.tcp.dstPort(secret Port) : exact; hdr.tcp.srcPort : exact;
         #self.controller.table_add("secret_entries", "go_trough_secret_port", [str(dstIP),str(srcIP),str(dstPort),str(srcPort)], [])
+
+    def forbid_entrace(self, pkt):
+        k = get_entrance_key(pkt)
+        if k in self.allowed_entrances:
+            id = self.allowed_entrances.pop(k)
+            self.controller.table_delete('source_accepted', id)
+        else:
+            print(red('Could not read ID from dict with key ' + k))
 
     def run(self):
         script = path.basename(__file__)

@@ -40,10 +40,11 @@ control MyIngress(inout headers hdr,
     register<bit<TIMESTAMP_WIDTH>>(4096) time_stamps;
     register<bit<BLOOM_FILTER_BIT_WIDTH>>(BLOOM_FILTER_ENTRIES) bloom_filter;
 
-    // Options:
-    // index = 0: to be set if debugging should be activated (uses DPI)
-    // TODO: add other options, e.g. enabling/disabling blacklisting, etc
-    register<bit<1>>(1) options;
+    // OBSOLETE: was used for debugging mechaniq in DPI
+    // // Options:
+    // // index = 0: to be set if debugging should be activated (uses DPI)
+    // // TODO: add other options, e.g. enabling/disabling blacklisting, etc
+    // register<bit<1>>(1) options;
 
     action drop() {
         mark_to_drop();
