@@ -6,6 +6,7 @@ from scapy.all import *
 from os import path
 import traceback
 import time
+import pickle
 
 def red(str):
     code = 91
@@ -13,7 +14,7 @@ def red(str):
 
 # entrace key is based on src and dst IP
 def get_entrance_key(pkt):
-    return '{}{}'.format(pkt['IP'].src, pkt['IP'].dst)
+    return '{}-{}'.format(pkt['IP'].src, pkt['IP'].dst)
 
 class Controller(object):
 
@@ -25,6 +26,7 @@ class Controller(object):
         self.controller = SimpleSwitchAPI(self.thrift_port)
         self.cpu_port =  self.topo.get_cpu_port_index(self.sw_name)
         self.allowed_entrances = {}
+        self.entrance_file = self.script_path + '/table_files/source_accepted.pkl'
         self.init()
 
     def init(self):
@@ -39,6 +41,29 @@ class Controller(object):
 
     def set_table_defaults(self):
         self.controller.table_set_default("source_accepted","NoAction",[])
+
+    def save_entrances(self):
+        if not self.allowed_entrances:
+            print('No entries to save in file')
+            try:
+                os.remove(self.entrance_file)
+            except:
+                print('Entries file not removed.. Do manually! File: ' + self.entrance_file)
+            return
+        if not os.path.exists(self.script_path + '/table_files'):
+            os.makedirs(self.script_path + '/table_files')
+        # if not os.path.exists(self.entrance_file):
+        #     with open()
+        #     open(self.entrance_file, 'w+').close()
+        with open(self.entrance_file, 'w+b') as f:
+            pickle.dump(self.allowed_entrances, f, pickle.HIGHEST_PROTOCOL)
+
+    def read_entrances(self):
+        if os.path.exists(self.entrance_file):
+            with open(self.entrance_file, 'rb') as f:
+                self.allowed_entrances = pickle.load(f)
+        else:
+            print('No allowed entrance file')
 
     def recv_msg_knock(self, pkt):
         self.knock_counter = self.knock_counter + 1
@@ -119,9 +144,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     try:
-        controller = Controller(args.sw).run()
+        controller = Controller(args.sw)
+        controller.read_entrances()
+        controller.run()
     except:
         print(red('CONTROLLER TERMINATED UNEXPECTEDLY! WITH ERROR:'))
+        controller.save_entrances()
         traceback.print_exc()
     else:
+        controller.save_entrances()
         print('CONTROLLER REACHED THE END')

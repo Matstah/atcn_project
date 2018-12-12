@@ -29,3 +29,6 @@ pcap*/
 
 # DPI log files
 Project/controller/dpi_log/*
+
+# pickle files
+*.pkl
