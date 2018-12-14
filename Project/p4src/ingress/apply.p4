@@ -74,43 +74,52 @@ if (
                     //PORT KNOCKER
                     switch(knocking_rules.apply().action_run){
                         out_of_order_knock: {
-                            if(meta.knock_slot == hdr.ipv4.srcAddr){
-                                delete_knock_state();
+                            if(meta.knock_srcIP == hdr.ipv4.srcAddr){
+                                if(meta.knock_srcPort == hdr.udp.srcPort){
+                                    if(meta.knock_dstIP == hdr.ipv4.dstAddr){
+                                        delete_knock_state();
+                                    }
+                                }
                             }
                         }
                         port_rule: {
                             //check slot status
-                            if(0 == meta.knock_slot){ // slot is free
+                            if(0 == meta.knock_srcIP){ // slot is free
                                 if(1 == meta.sequence_number){ // src knocks on first port
                                     start_knock_state();
                                 }else{}//do nothing, src knocked on wrong port and does not own a slot
 
-                            }else if(meta.knock_slot == hdr.ipv4.srcAddr){ // slot is occupied by this src
-                                if(1 == meta.sequence_number){
-                                    start_knock_state();
+                            }else if(meta.knock_srcIP == hdr.ipv4.srcAddr){
+                                if(meta.knock_srcPort == hdr.udp.srcPort){
+                                    if(meta.knock_dstIP == hdr.ipv4.dstAddr){
+                                        // slot is occupied by this src
+                                        if(1 == meta.sequence_number){
+                                            start_knock_state();
 
-                                }else if(meta.sequence_number == meta.knock_next){
-                                    //knocking sequence is korrect
-                                    bit<48> time_diff = standard_metadata.ingress_global_timestamp - meta.knock_timestamp;
-                                    if(time_diff < meta.delta_time){
-                                    //knock in expected time range
-                                        if(meta.sequence_number < meta.total_knocks){
-                                            //not final port, expect next node
-                                            set2next_knock_state();
+                                        }else if(meta.sequence_number == meta.knock_next){
+                                            //knocking sequence is korrect
+                                            bit<48> time_diff = standard_metadata.ingress_global_timestamp - meta.knock_timestamp;
+                                            if(time_diff < meta.delta_time){
+                                            //knock in expected time range
+                                                if(meta.sequence_number < meta.total_knocks){
+                                                    //not final port, expect next node
+                                                    set2next_knock_state();
+                                                }else{
+                                                    //knocked final port-> tell controller to activate vpn
+                                                    send_controller_open_sesame();
+                                                    delete_knock_state();
+                                                }
+                                            }else{
+                                                //knock timeout
+                                                delete_knock_state();
+                                            }
                                         }else{
-                                            //knocked final port-> tell controller to activate vpn
-                                            send_controller_open_sesame();
+                                            //knocking sequense is false
                                             delete_knock_state();
                                         }
-                                    }else{
-                                        //knock timeout
-                                        delete_knock_state();
                                     }
-                                }else{
-                                    //knocking sequense is false
-                                    delete_knock_state();
                                 }
-                            }else{ //(meta.knock_slot != srcIP) slot is occupied by other source
+                            }else{ //(meta.knock_srcIP != srcIP) slot is occupied by other source
                                 //check if other slot has timed out.
                                 bit<48> time_diff = standard_metadata.ingress_global_timestamp - meta.knock_timestamp;
                                 if(time_diff < meta.delta_time){

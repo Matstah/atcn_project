@@ -58,8 +58,8 @@ class Controller(object):
         self.controller.table_add("secret_entries", "go_trough_secret_port", [str(dstIP),str(srcIP),str(3141),str(srcPort)], [])
 
 
-    def recv_msg_dpi(self, pkt):
-
+    def recv_msg(self, pkt):
+        pkt.show()
         if pkt['UDP'].dport == 0:
             print ('-------knock received-------')
             self.allow_entrance(pkt)
@@ -75,7 +75,7 @@ class Controller(object):
         # knock loop
         cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
         print('{}: Start Knock_Accepter on cpu_port_intf={}'.format(script, cpu_port_intf))
-        sniff(iface=cpu_port_intf, prn=self.recv_msg_dpi)
+        sniff(iface=cpu_port_intf, prn=self.recv_msg)
 
 # MAIN
 ######
