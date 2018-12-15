@@ -2,6 +2,7 @@
 
 // DPI
 if(standard_metadata.instance_type == 1){
+    //control header is used to tell the controller what to do with that packet. It is added at the end of the clone.
     hdr.controller.setValid();
     hdr.controller.type = (bit<32>)meta.clone_id;
     if (meta.clone_id == 1){
@@ -17,17 +18,14 @@ if(standard_metadata.instance_type == 1){
         hdr.dpi.unused = (bit<5>) 0;
     }
     if (meta.clone_id == 2){
-        //KNOCKER
-
-        //TODO: change controller, then not needed anymore
-        hdr.udp.dstPort = 0; //used as id to tell controller it is a pnock acceter..
-        hdr.udp.udp_length =0;
-        truncate((bit<32>)42); //14 ether +20 ip+ 8 udp= 42
+        //KNOCKER, tell controller to allow access on secret entry.
+        hdr.udp.udp_length =12;
+        truncate((bit<32>)46); //14 ether +20 ip+ 8 udp + 4 control_h = 46
     }
     if (meta.clone_id == 3){
+        //SYN-source validation: tell controller to accept this src as verified.
         hdr.ipv4.totalLen = 44;
         truncate((bit<32>)58);
-        //syn_defender: tell controller to accept this src.
     }
     if (meta.clone_id == 4){
         hdr.tcp.setInvalid();

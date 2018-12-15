@@ -2,11 +2,11 @@ import nnpy
 import struct
 from p4utils.utils.topology import Topology
 from p4utils.utils.sswitch_API import SimpleSwitchAPI
-from scapy.all import Ether, sniff, Packet, BitField, UDP
+from scapy.all import *
 from os import path, makedirs
 import traceback
 from time import time
-import Dpi
+import logging as log
 
 
 # Controller
@@ -27,11 +27,9 @@ class Controller(object):
 
     def init(self):
         self.knock_counter = 0
-
         self.set_table_defaults()
         self.set_table_knocking_rules()
-
-        self.add_mirror(100) # DPI: mirror_id = 100
+        self.add_mirror(100)
 
     def add_mirror(self, mirror_id):
         if self.cpu_port:
@@ -43,7 +41,7 @@ class Controller(object):
         self.controller.table_set_default("secret_entries","NoAction",[])
 
     def set_table_knocking_rules(self):
-        #set table knocking sequence
+        #set knocking sequence to table
         counter = 1
         for port in self.knocking_sequence:
             self.controller.table_add("knocking_rules", "port_rule", [str(port)], [str(self.delta_time), str(counter), str(len(self.knocking_sequence))])
@@ -51,30 +49,56 @@ class Controller(object):
             counter += 1
 
     def allow_entrance(self,pkt):
+        #set table entry to allow access through secret port
         srcIP = pkt['IP'].src
         dstIP = pkt['IP'].dst
         srcPort = pkt['UDP'].sport
         #hdr.ipv4.dstAddr : exact; hdr.ipv4.srcAddr : exact; hdr.tcp.dstPort(secret Port) : exact; hdr.tcp.srcPort : exact;
-        self.controller.table_add("secret_entries", "go_trough_secret_port", [str(dstIP),str(srcIP),str(3141),str(srcPort)], [])
+        self.controller.table_add("secret_entries", "go_trough_secret_port", [str(dstIP),str(srcIP),str(self.secret_port),str(srcPort)], [])
+
+    def deparse_pack(self, pkt):
+        # handler for packet parsing
+        LAYER_ORDER = ['ethernet', 'ip', 'tcp', 'udp']
+        LAYER_MAP = {
+            'ethernet': Ether,
+            'ip': IP,
+            'tcp': TCP,
+            'udp': UDP
+        }
+        payload = None
+        for layer in LAYER_ORDER:
+            layer_content = pkt.getlayer(LAYER_MAP[layer])
+            if (layer_content):
+                payload = layer_content.payload
+        controlHeader = ControlHeader(payload)
+        controlHeader.show()
+        #print 'header value: {}'.format(controlHeader.control_payload)
+        return controlHeader.control_payload
 
 
     def recv_msg(self, pkt):
-        if pkt['UDP'].dport == 0:
-            print ('-------knock received-------')
+        print ('-------control packet received-------')
+        value = self.deparse_pack(pkt)
+        if value == 2:
+            log.info("install secret access rule")
             self.allow_entrance(pkt)
 
     def run(self):
         script = path.basename(__file__)
         print('{}: Controller.run() called on {}'.format(script, self.sw_name))
 
-        # set functionality on firewall
-        #self.activate_dpi()
-        #self.activate_debug()
-
         # knock loop
         cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
         print('{}: Start Knock_Accepter on cpu_port_intf={}'.format(script, cpu_port_intf))
         sniff(iface=cpu_port_intf, prn=self.recv_msg)
+
+# Packet description
+class ControlHeader(Packet):
+    name = 'ControlHeader'
+    fields_desc = [
+        BitField('control_payload',0,32)
+    ]
+
 
 # MAIN
 ######
@@ -97,6 +121,7 @@ if __name__ == "__main__":
     # NOTE: this try-except-else stuff could be handled better, but whatever...
     # NOTE: also the opening and closing of files is not optimal...
     try:
+        log.basicConfig(stream=sys.stderr, level=log.INFO)
         controller = Controller(args.sw, args.port_sequence, args.secret_port, args.timeout)
         controller.run()
     except:
@@ -106,4 +131,3 @@ if __name__ == "__main__":
 
             do_cleanup =0
         print('CONTROLLER REACHED THE END')
-    # TODO: change file permissions.. should be deletable

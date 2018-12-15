@@ -1,5 +1,5 @@
 # Controllers
-All these scripts can be found at `~/atcn-project/Project/controller` and the commands are expected to be executed from there in the following documentation.
+All these scripts can be found at `~/atcn-project/Project/controller` and the commands are expected to be executed from there as in the following documentation.
 
 ## firewall_controller.py
 This script connects to the firewall and sets 2 blacklists. One that looks at dst ip address for traffic from intern to extern. The other blacklist looks at source ip of traffic from extern to intern. On both lists we use ranges of ip to define what should be blocked. The whitelist is for dst ports from extern to intern traffic. Currently he1 is blocked on both directions, and port 80 and 110 is open.
@@ -7,11 +7,19 @@ This script connects to the firewall and sets 2 blacklists. One that looks at ds
 sudo python firewall_controller.py
 ```
 ## port_knock_controller.py
-TODO
+The port knock controller sets up a port knocking tracker on the switch via table entries.
+It also sets the secret port, which will be opened to a specific source once a correct knocking sequence has been recorded.
 
+Following command uses the default port knocker, with sequence [100,101,102,103], secret port 3141 and time between knocks of 5000000
 ```
 sudo python port_knock_controller.py
 ```
+Specific values can be set with:
+```
+sudo port_knock_controller.py -ps 100 101 102 103 -s 3143 -t 5000000
+```
+All UDP traffic, that can not pass the stateful firewall will be dropped by the firewall, independently of this controller.
+
 
 ##syndef_controller.py
 TODO

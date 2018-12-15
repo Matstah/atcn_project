@@ -31,12 +31,12 @@ class Controller(object):
 
     def init(self):
         self.knock_counter = 0
-        self.add_mirror(100) # DPI: mirror_id = 100 TODO: use other mirror ID for knocking?
+        self.add_mirror(100)
         self.set_table_defaults()
 
     def add_mirror(self, mirror_id):
         if self.cpu_port:
-            self.controller.mirroring_add(mirror_id, self.cpu_port) #with the mirror id, we can set a specific port for cloning
+            self.controller.mirroring_add(mirror_id, self.cpu_port)
             print('mirror_id={} added to cpu_port={}'.format(mirror_id, self.cpu_port))
 
     def set_table_defaults(self):
@@ -68,7 +68,7 @@ class Controller(object):
     def recv_msg_knock(self, pkt):
         self.knock_counter = self.knock_counter + 1
         print('Received knock packet number {}'.format(self.knock_counter))
-        pkt.show() #prints packet to cli
+        #pkt.show() #prints packet to cli
         print'New packet arrived+ {}'.format(self.knock_counter)
         value = self.deparse_pack(pkt)
         if value == 3:
@@ -109,8 +109,7 @@ class Controller(object):
         #hdr.ipv4.dstAddr : exact; hdr.ipv4.srcAddr : exact; hdr.tcp.dstPort(secret Port) : exact; hdr.tcp.srcPort : exact;
         val = self.controller.table_add("source_accepted", "NoAction", [str(srcIP),str(dstIP),str(dstPort)], [])
         self.allowed_entrances[get_entrance_key(pkt)] = val
-        #hdr.ipv4.dstAddr : exact; hdr.ipv4.srcAddr : exact; hdr.tcp.dstPort(secret Port) : exact; hdr.tcp.srcPort : exact;
-        #self.controller.table_add("secret_entries", "go_trough_secret_port", [str(dstIP),str(srcIP),str(dstPort),str(srcPort)], [])
+
 
     def forbid_entrace(self, pkt):
         k = get_entrance_key(pkt)

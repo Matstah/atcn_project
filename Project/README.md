@@ -56,14 +56,14 @@ sudo python port_knock_controller.py
 ```
 or
 ```
-sudo testing/port_knock_controller.py -ps 100 101 102 103 -s 3143 -t 5000000
+sudo port_knock_controller.py -ps 100 101 102 103 -s 3143 -t 5000000
 ```
 This command sets the defaults used for the test example.
 This script sets tells the firewall all different knocking states, such that the whole knocking state machine operates in p4.
 This script should be kept open during the knocking, because it will receive messages from the switch/firewall. These messages contain information for the switch to set an entry on the **Secret List** to grant entrance trough the secret port.
 To set a specific secret port, knocking sequence, max time between knocks, use:
 ```
-sudo testing/port_knock_controller.py -ps <knock sequence> -s <secret port> -t <max time between knocks>
+sudo port_knock_controller.py -ps <knock sequence> -s <secret port> -t <max time between knocks>
 ```
 **Test:** Open two port interfaces on the firewall, one on the internal side, one on the external. In example we send the knock sequence from he2 to hi2.
 ```
@@ -81,11 +81,13 @@ Now we are able to inspect all traffic reaching the firewall from he2, and can s
 
 To activate the knock tester, go into the Project/testing folder and run:
 ```
-sudo python knock_seq_send.py --local --src he2 --dst hi2 -k 100 101 102 103
+sudo python knock_seq_send.py --local --src he2 --dst hi2 -k 100 101 102 103 -s 3142
+sudo python knock_seq_send.py --local --src <srcName> --dst <dstName> -k <knock sequence> -s <secret port>
 ```
 With [100, 101, 102, 103] being the correct knocking sequence. The secret port is set within the script.
 This test file runs 3 test cases:
-* Send knock sequence with a timeout-> nothing should get trough firewall.
+
+* Send knock sequence with a timeout-> nothing should get trough firewall.
 * Send knock sequence including wrong knock-> nothing should get trough firewall. Then a correct one is send, and 1 tcp packet should be able to pass the firewall on the secret port 3141.
 * 3 knockers are trying to complete a correct knock, while the firewall is hammered with many different UDP packets. Each UDP packet creates a knock. When successful, 3 TCP packet from 3 different source ports should get trough the firewall.
 

@@ -67,7 +67,7 @@ def send(dst, knock_seq,secret_port, showPacket=False):
     send_knock_under_noise(knock_seq, ether_src, ether_dst, iface, ip_addr, secret_port)
 
 
-
+#test case 1
 def send_knock_timeout(knock_seq, ether_src, ether_dst, iface, ip_addr, sport, secret_port):
     print"-----------------send knock with timeout-------------------"
     count = 1
@@ -91,6 +91,7 @@ def send_knock_timeout(knock_seq, ether_src, ether_dst, iface, ip_addr, sport, s
     num_packet=1
     send_tcp_traffic(sport, ip_addr, num_packet, secret_port, ether_dst, ether_src, iface)
 
+#test case 2
 def send_wrong_knock(knock_seq, ether_src, ether_dst, iface, ip_addr, sport, secret_port):
     print"-------------send wrong knock, then correct-----------------"
     count = 1
@@ -121,7 +122,7 @@ def send_wrong_knock(knock_seq, ether_src, ether_dst, iface, ip_addr, sport, sec
     num_packet=1
     send_tcp_traffic(sport, ip_addr, num_packet, secret_port, ether_dst, ether_src, iface)
 
-
+#test case 3
 def send_knock_under_noise(knock_seq, ether_src, ether_dst, iface, ip_addr, secret_port):
     noise_stop = threading.Event()
     log.critical("noise thread running:")
@@ -139,6 +140,7 @@ def send_knock_under_noise(knock_seq, ether_src, ether_dst, iface, ip_addr, secr
     log.critical("All knocks are done. Noise thread stoped")
 
 
+#traffic send to secret port.. if it passes, port is open.
 def send_tcp_traffic(sport, ip_addr, num_packet, secret_port, ether_dst, ether_src, iface):
     log.info('Sending {} tcp packets to secret port {}'.format(num_packet, secret_port))
     time.sleep(1)
@@ -150,6 +152,7 @@ def send_tcp_traffic(sport, ip_addr, num_packet, secret_port, ether_dst, ether_s
         count += 1
 
 
+#A correct port knocker, used as a thread.
 def correct_port_knocker(arg1, knock_seq, ether_src, ether_dst, iface, ip_addr, secret_port):
     print"-----------------send correct knock, sender {}--------------------".format(arg1)
     count = 1
@@ -166,9 +169,9 @@ def correct_port_knocker(arg1, knock_seq, ether_src, ether_dst, iface, ip_addr, 
 
     log.info("k_seq send from port %s" % (sport))
     num_packet=1
-    send_tcp_traffic(sport, ip_addr, num_packet, secret_port, ether_dst, ether_src, iface)
+    send_tcp_traffic(sport, ip_addr, num_packet, int(secret_port), ether_dst, ether_src, iface)
 
-
+#Sends UDP traffic from any source to the same target as knocker tries to knock.. used to try robustness of knocker..
 def udp_noise(arg1, stop_event, ip_addr,ether_src, ether_dst, iface):
     print("...........udp noise thread started..........")
     counter =1
@@ -186,11 +189,11 @@ def udp_noise(arg1, stop_event, ip_addr,ether_src, ether_dst, iface):
     print" {} udp packets send to ip_addr {}".format(counter, ip_addr)
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+
     #COMMAND:
-    #sudo python testing/knock_seq_send.py --local --src he2 --dst hi2 -k 100 101 102 103
+    #sudo python testing/knock_seq_send.py --local --src he2 --dst hi2 -k 100 101 102 103 -s 3141
 
     # args for local execution
     parser.add_argument('--local', action='store_true', required=False, help='If script should run from local prompt')
@@ -200,7 +203,7 @@ if __name__ == "__main__":
     # args for actual functionality
     parser.add_argument('-d', '--dst',     type=str, required=True, help='Destination NAME or IPv4')
     parser.add_argument('-k','--knock_seq', default = [], required=False, nargs ='+', help='dst ports to knock on')
-
+    parser.add_argument('-s', '--secret_port', type=int ,default = 3141, required=False, help='set secret port used to send tcp traffic')
     #parser.add_argument('--sleep', type=float, required=False, default=0.0, help='Sleep time between packets')
     parser.add_argument('--show', action='store_true', required=False, help='If set, all sent packets are printed')
 
@@ -218,9 +221,6 @@ if __name__ == "__main__":
 
     # start sending from host or dispatch to host
     if (args.local and not args.on_remote):
-        # TODO: open receive terminals first
-        #if(args.receive):
-        #    os.system("xterm -e 'bash -c \"sudo apt-get update; exec bash\"'")
 
         # call script on host with same params, plus on_remote flag to avoid loop
         from subprocess import call
@@ -230,6 +230,5 @@ if __name__ == "__main__":
     else:
         # load globals
         topo = Topology(db="/home/p4/atcn-project/Project/topology.db")
-        secret_port = 3141
-        send(args.dst, args.knock_seq, secret_port , showPacket=args.show)
+        send(args.dst, args.knock_seq, args.secret_port , showPacket=args.show)
 # END MAIN
