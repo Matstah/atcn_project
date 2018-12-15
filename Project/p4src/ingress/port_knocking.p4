@@ -1,17 +1,24 @@
 
 register<bit<32>>(KNOCK_SLOTS) reg_knocking_srcIP;
+register<bit<32>>(KNOCK_SLOTS) reg_knocking_dstIP;
+register<bit<16>>(KNOCK_SLOTS) reg_knocking_srcPort;
+
 register<bit<SIZE_KNOCK_SEQ>>(KNOCK_SLOTS) reg_next_knock;
 register<bit<48>>(KNOCK_SLOTS) reg_knock_timeout;
 
 //actions port knocking
 action read_knock_slot(){
-    reg_knocking_srcIP.read(meta.knock_slot, (bit<32>)meta.knock_id);
+    reg_knocking_srcIP.read(meta.knock_srcIP, (bit<32>)meta.knock_id);
+    reg_knocking_dstIP.read(meta.knock_dstIP, (bit<32>)meta.knock_id);
+    reg_knocking_srcPort.read(meta.knock_srcPort, (bit<32>)meta.knock_id);
     reg_next_knock.read(meta.knock_next, (bit<32>)meta.knock_id);
     reg_knock_timeout.read(meta.knock_timestamp, (bit<32>)meta.knock_id);
 }
 
 action start_knock_state(){
     reg_knocking_srcIP.write((bit<32>)meta.knock_id, hdr.ipv4.srcAddr);
+    reg_knocking_dstIP.write((bit<32>)meta.knock_id, hdr.ipv4.dstAddr);
+    reg_knocking_srcPort.write((bit<32>)meta.knock_id, hdr.udp.srcPort);
     reg_next_knock.write((bit<32>)meta.knock_id, 2);
     reg_knock_timeout.write((bit<32>)meta.knock_id, standard_metadata.ingress_global_timestamp);
 }
@@ -29,7 +36,6 @@ action delete_knock_state(){
 
 action send_controller_open_sesame(){
     meta.clone_id = 2;
-    meta.knock_srcPort = hdr.udp.srcPort;
     clone3(CloneType.I2E, 100, meta);
 }
 
@@ -55,7 +61,8 @@ action port_rule(bit<48> delta_time, bit<SIZE_KNOCK_SEQ> sequence_number, bit<SI
 
 action out_of_order_knock(){
     get_knock_id();
-    reg_knocking_srcIP.read(meta.knock_slot, (bit<32>)meta.knock_id);
+    reg_knocking_srcIP.read(meta.knock_srcIP, (bit<32>)meta.knock_id);
+
 }
 
 action go_trough_secret_port(){

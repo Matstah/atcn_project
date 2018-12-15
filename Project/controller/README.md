@@ -2,11 +2,24 @@
 All these scripts can be found at `~/atcn-project/Project/controller` and the commands are expected to be executed from there in the following documentation.
 
 ## firewall_controller.py
-This script connects to the firewall and waits for a packet from it. This packet contains information about which src has sucessfully completed a knocking sequence. The controller puts the (srcIP,dstIP, srcPort, secret port) onto a white list table, so the firewall will let this tupel (tcp) trough in the future.
+This script connects to the firewall and sets 2 blacklists. One that looks at dst ip address for traffic from intern to extern. The other blacklist looks at source ip of traffic from extern to intern. On both lists we use ranges of ip to define what should be blocked. The whitelist is for dst ports from extern to intern traffic. Currently he1 is blocked on both directions, and port 80 and 110 is open.
+```
+sudo python firewall_controller.py
+```
+## port_knock_controller.py
+TODO
 
 ```
-sudo port_knock_controller.py
+sudo python port_knock_controller.py
 ```
+
+##syndef_controller.py
+TODO
+
+```
+sudo python syndef_controller.py
+```
+
 
 ## dpi_controller.py
 NOTE: DEBUGGING IS NOT WORKING AT THE MOMENT (but still mentioned below)
@@ -17,7 +30,7 @@ When the script terminates, the register values are reset to disable the functio
 ### DPI
 This controller can set the probability for which a flow gets selected with the first SYN packet and then log certain flows according to it. For example for a probability of 50%:
 ```
-sudo dpi_controller.py -p 50
+sudo python dpi_controller.py -p 50
 ```
 sets the probability to 50% by setting the appropriate register on the firewall. From then on the firewall will select with a probability of 50% if a new flow should be monitored. If yes, the firewall will clone the packets of the flow and send them to the controller. The controller then logs the flow in a file of the following format in `./dpi_log`:
 ```

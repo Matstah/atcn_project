@@ -77,13 +77,14 @@ struct metadata {
 
     //port knocking part
     bit<8> knock_id;
-    bit<32> knock_slot;
+    bit<32> knock_srcIP;
     bit<SIZE_KNOCK_SEQ> knock_next;
     bit<48> knock_timestamp;
     bit<48> delta_time;
     bit<SIZE_KNOCK_SEQ> sequence_number;
     bit<SIZE_KNOCK_SEQ> total_knocks;
     bit<16> knock_srcPort;
+    bit<32> knock_dstIP;
 
     // stateless part
     bit<32> flow_id; // TODO: check bit length // also used for DPI
