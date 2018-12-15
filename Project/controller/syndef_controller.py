@@ -25,7 +25,7 @@ class Controller(object):
         self.thrift_port = self.topo.get_thrift_port(sw_name)
         self.controller = SimpleSwitchAPI(self.thrift_port)
         self.cpu_port =  self.topo.get_cpu_port_index(self.sw_name)
-        self.allowed_entrances = {}
+        # self.allowed_entrances = {}
         self.entrance_file = self.script_path + '/table_files/source_accepted.pkl'
         self.init()
 
@@ -43,18 +43,19 @@ class Controller(object):
         self.controller.table_set_default("source_accepted","NoAction",[])
 
     def save_entrances(self):
+        # if there are no entries: delete file if it exists
         if not self.allowed_entrances:
             print('No entries to save in file')
             try:
                 os.remove(self.entrance_file)
             except:
-                print('Entries file not removed.. Do manually! File: ' + self.entrance_file)
+                if os.path.isfile(self.entrance_file):
+                    print('Entries file not removed.. Do manually! File: ' + self.entrance_file)
             return
+
+        # safe dict in file
         if not os.path.exists(self.script_path + '/table_files'):
             os.makedirs(self.script_path + '/table_files')
-        # if not os.path.exists(self.entrance_file):
-        #     with open()
-        #     open(self.entrance_file, 'w+').close()
         with open(self.entrance_file, 'w+b') as f:
             pickle.dump(self.allowed_entrances, f, pickle.HIGHEST_PROTOCOL)
 
@@ -75,9 +76,8 @@ class Controller(object):
             print'---------------src is validated and accepted to access server----------------------'
             self.allow_entrance(pkt)
         if value == 4:
-            # print('---------------src is getting blacklisted------------------')
-            # print('return type of table_dump: ' + str(type(self.controller.table_dump('source_accepted'))))
-            # self.controller.table_add("blacklist_src_ip", "drop", ['{0}->{0}'.format(pkt['IP'].src)],[],'1337') # Because this src IP can't be blacklisted (or it wouldn't have gotten this far) we can use a random prio for it
+            print('---------------src is getting blacklisted------------------')
+            self.controller.table_add("blacklist_src_ip", "drop", ['{0}->{0}'.format(pkt['IP'].src)],[],'1337') # Because this src IP can't be blacklisted (or it wouldn't have gotten this far) we can use a random prio for it
             print('---------------src is no longer allowed to access server------------------')
             self.forbid_entrace(pkt)
 
