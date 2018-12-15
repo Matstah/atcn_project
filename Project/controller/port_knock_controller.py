@@ -59,7 +59,6 @@ class Controller(object):
 
 
     def recv_msg(self, pkt):
-        pkt.show()
         if pkt['UDP'].dport == 0:
             print ('-------knock received-------')
             self.allow_entrance(pkt)
