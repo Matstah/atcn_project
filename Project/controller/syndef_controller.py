@@ -25,7 +25,7 @@ class Controller(object):
         self.thrift_port = self.topo.get_thrift_port(sw_name)
         self.controller = SimpleSwitchAPI(self.thrift_port)
         self.cpu_port =  self.topo.get_cpu_port_index(self.sw_name)
-        # self.allowed_entrances = {}
+        self.allowed_entrances = {}
         self.entrance_file = self.script_path + '/table_files/source_accepted.pkl'
         self.init()
 
@@ -95,10 +95,10 @@ class Controller(object):
             layer_content = pkt.getlayer(LAYER_MAP[layer])
             if (layer_content):
                 payload = layer_content.payload
-        dpiHeader = DpiHeader(payload)
-        dpiHeader.show()
-        print 'header value: {}'.format(dpiHeader.dpi_payload)
-        return dpiHeader.dpi_payload
+        ControlHeader = ControlHeader(payload)
+        ControlHeader.show()
+        print 'header value: {}'.format(ControlHeader.control_payload)
+        return ControlHeader.control_payload
 
     def allow_entrance(self,pkt):
         srcIP = pkt['IP'].src
@@ -129,10 +129,10 @@ class Controller(object):
         sniff(iface=cpu_port_intf, prn=self.recv_msg_knock) #prn says to send pack to function
 
 # Packet description
-class DpiHeader(Packet):
-    name = 'DpiHeader'
+class ControlHeader(Packet):
+    name = 'ControlHeader'
     fields_desc = [
-        BitField('dpi_payload',0,32)
+        BitField('control_payload',0,32)
     ]
 
 

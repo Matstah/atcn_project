@@ -137,7 +137,7 @@ class Controller(object):
 
     # TODO: comment
     def log_dpi(self, content, d):
-        file = self.get_flow_file(d)
+        file = self.get_dpi_file(d)
         with open(file, 'a+') as log:
             log.write(content)
             log.close() # TODO: maybe move this to the end of the script?
@@ -178,7 +178,7 @@ class Controller(object):
     def save_entrances(self):
         # if there are no entries: delete file if it exists
         if not self.allowed_entrances:
-            print('No entries to save in file')
+            print('No entries to save in file, because there are is no src marked as valid.')
             try:
                 os.remove(self.entrance_file)
             except:
@@ -198,7 +198,7 @@ class Controller(object):
             with open(self.entrance_file, 'rb') as f:
                 self.allowed_entrances = pickle.load(f)
         else:
-            print('No allowed entrance file')
+            print('No allowed entrance file to read. Start with empty dict.')
 
     ### RUN
     def run(self):
@@ -210,6 +210,7 @@ class Controller(object):
         print(green('Start sniffing on ' + cpu_port_intf))
         sniff(iface=cpu_port_intf, prn=self.recv_msg)
 
+    ### RECV_MSG: handle packet according to clone type
     def recv_msg(self, pkt):
         self.pkt_counter = self.pkt_counter + 1
         print('Cloned packet {}'.format(self.pkt_counter))
@@ -222,10 +223,11 @@ class Controller(object):
             try:
                 dpi = DpiHeader(rest)
                 dpi_dict = Dpi.parse(dpi)
-                text = '{t}{c}{b}{l}{b}'.format(t=text, c=stringify(dpi_dict), b='\n', l='-'*10)
+                text = '{t}{c}{b}{l}{b}'.format(t=text, c=Dpi.stringify(dpi_dict), b='\n', l='-'*10)
                 self.log_dpi(text, dpi_dict)
             except:
                 print(red('Could not extract DPI information'))
+                traceback.print_exc()
         elif clone_type == KNOCK_PKT:
             self.allow_entrance_knocking(pkt)
         elif clone_type == SRC_VALIDATION_SUCCESS_PKT:
@@ -237,7 +239,7 @@ class Controller(object):
             # Because this src IP can't be blacklisted (or it wouldn't have gotten this far) we can use a random prio for it
             print('{} is now blacklisted'.format(green(srcIP)))
         else:
-            print(red('Unknown clone type number:s ' + str(clone_type)))
+            print(red('Unknown clone type number: ' + str(clone_type)))
 
 ### CLASS: ControlHeader
 # For scapy: Contains packet id such that controller knows what content the packet holds
@@ -258,10 +260,8 @@ class DpiHeader(Packet):
         BitField('dstIpAddr',0,32),
         BitField('ingress_port',0,16),
         BitField('flow_id',0,32),
-        BitField('debug',0,1),
-        BitField('inspect',0,1),
         BitField('new_flow',0,1),
-        BitField('unused',0,5)
+        BitField('unused',0,7)
     ]
 
 ### Packet Deparser

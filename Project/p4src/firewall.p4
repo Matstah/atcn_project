@@ -32,19 +32,11 @@ control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
 
-    // DPI:
-    // index = 0: prob. for a new flow to be inspected
-    register<bit<7>>(1) inspection_probability;
-    register<bit<1>>(4096) known_flows;
-    register<bit<1>>(4096) inspected_flows;
+    register<bit<7>>(1) inspection_probability; // dpi: prob. for a new flow to be inspected
+    register<bit<1>>(4096) known_flows; // maps flow_id to "bool" if seen already
+    register<bit<1>>(4096) inspected_flows; // dpi: same size as known_flows
     register<bit<TIMESTAMP_WIDTH>>(4096) time_stamps;
-    register<bit<BLOOM_FILTER_BIT_WIDTH>>(BLOOM_FILTER_ENTRIES) bloom_filter;
-
-    // OBSOLETE: was used for debugging mechaniq in DPI
-    // // Options:
-    // // index = 0: to be set if debugging should be activated (uses DPI)
-    // // TODO: add other options, e.g. enabling/disabling blacklisting, etc
-    // register<bit<1>>(1) options;
+    register<bit<BLOOM_FILTER_BIT_WIDTH>>(BLOOM_FILTER_ENTRIES) bloom_filter; // heavy hitter
 
     action drop() {
         mark_to_drop();
@@ -81,7 +73,7 @@ control MyEgress(inout headers hdr,
 control MyComputeChecksum(inout headers hdr, inout metadata meta) {
      apply {
          update_checksum(
-	    hdr.ipv4.isValid(),
+	        hdr.ipv4.isValid(),
             { hdr.ipv4.version,
 	          hdr.ipv4.ihl,
               hdr.ipv4.dscp,
@@ -93,13 +85,14 @@ control MyComputeChecksum(inout headers hdr, inout metadata meta) {
               hdr.ipv4.ttl,
               hdr.ipv4.protocol,
               hdr.ipv4.srcAddr,
-              hdr.ipv4.dstAddr },
-              hdr.ipv4.hdrChecksum,
-              HashAlgorithm.csum16);
+              hdr.ipv4.dstAddr
+            },
+            hdr.ipv4.hdrChecksum,
+            HashAlgorithm.csum16);
 
         update_checksum(
             hdr.tcp.isValid(),
-            {hdr.tcp.srcPort,
+            {   hdr.tcp.srcPort,
                 hdr.tcp.dstPort,
                 hdr.tcp.seqNo,
                 hdr.tcp.ackNo,
@@ -114,10 +107,10 @@ control MyComputeChecksum(inout headers hdr, inout metadata meta) {
                 hdr.tcp.syn,
                 hdr.tcp.fin,
                 hdr.tcp.window,
-                hdr.tcp.urgentPtr},
-                hdr.tcp.checksum,
-                HashAlgorithm.csum16);
-
+                hdr.tcp.urgentPtr
+            },
+            hdr.tcp.checksum,
+            HashAlgorithm.csum16);
      }
 }
 

@@ -1,3 +1,6 @@
+import socket
+import struct
+
 # stringify DPI content
 # d = dict from parse()
 def stringify(d):
@@ -8,8 +11,6 @@ src={src}
 dst={dst}
 port={port}
 flow_id={flow_id}
-debug={debug}
-inspect={inspect}
 new_flow={new_flow}
 
 PAYLOAD:
@@ -17,12 +18,10 @@ PAYLOAD:
 """.format(**d)
     return s
 
+# extracted dpi info is parsed into a dict
 def parse(dpi):
-    if(dpi.new_flow):
-        info = 'FLOW IS NEW'
-    else:
-        info = 'flow continues'
-
+    new = bool(dpi.new_flow)
+    info = 'FLOW IS NEW' if new else 'flow continues'
     return {
         'info': info,
         'src': socket.inet_ntoa(struct.pack('!L', dpi.srcIpAddr)),
@@ -30,7 +29,5 @@ def parse(dpi):
         'port': dpi.ingress_port,
         'flow_id': dpi.flow_id,
         'payload': dpi.payload,
-        'debug': bool(dpi.debug),
-        'inspect': bool(dpi.inspect),
-        'new_flow': dpi.new_flow
+        'new_flow': new
     }

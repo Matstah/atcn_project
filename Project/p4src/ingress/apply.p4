@@ -244,9 +244,10 @@ else if (
 
 }
 
-// Clone packet if necessairy TODO: does this interfere with Knocking?
-// TODO: provide debugging possibility here?
+// Forwarding
 if(hdr.ipv4.isValid()) {
+
+    // Clone packet if requested for DPI
     inspected_flows.read(meta.dpi_activated, meta.flow_id);
     if (meta.dpi_activated > 0) {
         clone_for_dpi();

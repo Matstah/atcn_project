@@ -56,10 +56,8 @@ header dpi_t { // DPI
     bit<32> dstAddr;
     bit<16> ingress_port;
     bit<32> flow_id;
-    bit<1> debug;
-    bit<1> inspect;
     bit<1> new_flow;
-    bit<5> unused;
+    bit<7> unused;
 } // 15 Bytes
 
 header controller_t{
@@ -67,10 +65,10 @@ header controller_t{
 }//4 bytes
 
 struct metadata {
-    bit<8> clone_id; //1:DPI //2:port knocking
+    bit<8> clone_id; //1:DPI, 2:port knocking, 3:src valid, 4:src malicious
     bit<1> accept;
+
     // DPI
-    bit<1> debugging;
     bit<1> dpi_activated;
     bit<1> flow_is_new;
     port_t ingress_port; // DPI, because cloning resets all metadata
@@ -87,7 +85,7 @@ struct metadata {
     bit<32> knock_dstIP;
 
     // stateless part
-    bit<32> flow_id; // TODO: check bit length // also used for DPI
+    bit<32> flow_id;
     bit<32> hash_output_one;
     bit<32> hash_output_two;
     bit<32> counter_one;
@@ -107,5 +105,5 @@ struct headers {
     udp_t        udp;
 
     controller_t controller;
-    dpi_t        dpi; // DPI
+    dpi_t        dpi;
 }
