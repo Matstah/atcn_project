@@ -8,6 +8,13 @@ import traceback
 import time
 import sys
 
+# Default values
+DPI_DEFAULT = 100
+KNOCK_SEQUENCE_DEFAULT=[100,101,102,103]
+ALL_FILTERS=['wp', 'bs', 'bd']
+
+TIMEOUT_CONVERSION=1000000
+
 # Default actions to set for all tables
 TABLE_DEFAULT_ACTIONS = {
     'whitelist_tcp_dst_port': 'drop',
@@ -16,6 +23,12 @@ TABLE_DEFAULT_ACTIONS = {
     'knocking_rules': 'out_of_order_knock',
     'secret_entries': 'NoAction',
     'source_accepted': 'NoAction'
+}
+
+FILTERS = {
+    'wp': 'whitelist_tcp_dst_port',
+    'bs': 'blacklist_src_ip',
+    'bd': 'blacklist_dst_ip'
 }
 
 # Register names
@@ -36,7 +49,6 @@ def blue(str):
 def _col(s, code):
     return '\033[{}m'.format(code) + str(s) + '\033[0m'
 
-
 class Controller(object):
 
     def __init__(self):
@@ -53,25 +65,35 @@ class Controller(object):
         print('{}: {} - {}'.format(green(name.upper()), register, green(value)))
 
     # ARGUMENT SWITCHING
-    def do_things(self, a):
+    # a = args namespace object
+    # default = bool if script started with default stuff
+    def do_things(self, a, default):
         # Filter
-        if a.filter_defaults:
+        if a.no_filter:
+            self._clear_tables([FILTERS[k] for k in ALL_FILTERS])
+        elif default:
             self.set_table_defaults()
             self.set_whitelist_tcp_port()
             self.set_blacklist_srcIP()
             self.set_blacklist_dstIP()
+        elif a.filter_clear[0] != -1:
+            self._clear_tables([FILTERS[k] for k in a.filter_clear])
 
         # DPI
-        if a.dpi_prob >= 0:
+        if a.no_dpi:
+            self.set_register('dpi', 0, 0)
+        elif default:
+            self.set_register('dpi', 0, DPI_DEFAULT)
+        elif a.dpi_prob >= 0:
             self.set_register('dpi', 0, a.dpi_prob)
 
         # Knocking
-        if a.knock:
-            self.set_table_knocking_rules(a.knock_sequence, a.knock_timeout*1000000)
-        else:
-            if a.knock_sequence or a.knock_port or a.knock_timeout:
-                print(red('You have set knocking attributes, but did not activate it with -k flag'))
-
+        if a.no_knock:
+            self.set_table_knocking_rules([0], 0)
+        elif default:
+            self.set_table_knocking_rules(KNOCK_SEQUENCE_DEFAULT, a.knock_timeout*TIMEOUT_CONVERSION)
+        elif a.knock_sequence[0] > 0:
+            self.set_table_knocking_rules(a.knock_sequence, a.knock_timeout*TIMEOUT_CONVERSION)
 
     # Filters lists
     ###############
@@ -86,6 +108,11 @@ class Controller(object):
                      randomPrio += 1
                  else:
                      self.controller.table_add(table, action, [str(d)])
+
+    def _clear_tables(self, tables):
+        for table in tables:
+            self.controller.table_clear(table)
+            print('table ' + green(table + ' cleared'))
 
     def set_table_defaults(self):
         for table, action in TABLE_DEFAULT_ACTIONS.items():
@@ -118,8 +145,13 @@ class Controller(object):
     # knocking
     ##########
     def set_table_knocking_rules(self, sequence, timeout):
-        # TODO: reset table first to insert the new rule from scratch?
-        #set table knocking sequence
+        # reset table first to insert the new rule from scratch
+        self._clear_tables(['knocking_rules'])
+        if sequence[0] == 0:
+            print(green('Knocking disabled'))
+            return
+
+        # set table knocking sequence
         counter = 1
         info = green('Knocking') + ' rule: {port} {counter}/' + str(len(sequence))
         for port in sequence:
@@ -129,37 +161,36 @@ class Controller(object):
             counter += 1
 
 if __name__ == "__main__":
+    only_defaults=False
     if len(sys.argv) < 2:
-        print(red('Nothing to do! --help for list of options'))
-        exit(0)
+        only_defaults=True
+        print(blue('Will use all default values'))
 
     import argparse
     parser = argparse.ArgumentParser()
 
-    # TODO: defaults argument that takes reasonable values
-    # Reset
-    parser.add_argument('--reset', '-r', action='store_true', required=False, help='Reset all tables and registers')
-    # parser.add_argument('--reset_todo') # TODO: reset single stuff
-
     # DPI
-    parser.add_argument('--dpi_prob', '-dp', type=int, required=False, default=-1, help="Set inspection probability [percent] [0 for disabling]")
+    parser.add_argument('--no_dpi', action='store_true', help='Deactivate dpi')
+    parser.add_argument('--dpi_prob', '-dp', type=int, required=False, default=-1, help="Set inspection probability [percent]")
 
-    # Knocking TODO: deactivate when 0 # TODO: remember to translate knock timeout *1000000
-    parser.add_argument('--knock', '-k', action='store_true', required=False, help='Flag to tell script it should set knocking stuff')
-    parser.add_argument('--knock_sequence', '-ks', required=False, nargs ='+', help='define port knocking sequence [0 for disabling]')
-    parser.add_argument('--knock_port', '-kp', required = False, type=int, help='set knock secret port' )
-    parser.add_argument('--knock_timeout', '-kt', required = False, type=int, help='set timeout [s] between knocks')
+    # Knocking
+    parser.add_argument('--no_knock', action='store_true', help='deactivate knock')
+    parser.add_argument('--knock_sequence', '-ks', nargs='+', default=[-1], help='define port knocking sequence')
+    parser.add_argument('--knock_timeout', '-kt', type=int, default=5, help='set timeout [s] between knocks')
 
     # Filters
-    parser.add_argument('--filter_defaults', '-fd', action='store_true', required=False, help='sets filter stuff from default files')
+    parser.add_argument('--no_filter', action='store_true', help='Deactive filling of tables with file values')
+    parser.add_argument('--filter_clear', '-fc', nargs='+', default=[-1], help='clear specified filter from [wp,bs,bd]')
     # TODO: and other files (that have to be written in other controller every time table_add is called)
 
     # get all options
     args = parser.parse_args()
+    # print(args)
+    # exit(0)
 
     try:
         controller = Controller()
-        controller.do_things(args)
+        controller.do_things(args, only_defaults)
     except:
         print(red('CONTROLLER TERMINATED UNEXPECTEDLY! WITH ERROR:'))
         traceback.print_exc()

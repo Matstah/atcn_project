@@ -11,31 +11,29 @@ import pickle
 from time import time
 import Dpi
 
-# DPI logging stuff
+# KNOCKING
+SECRET_PORT = 3141 # TODO: do not hardcode
+
+# DPI
 DPI_FOLDER_NAME='dpi_log'
 DPI_BASE_FILENAME='dpi_'
-
 # create dpi file name based on params
 def dpi_file_name(path, src, dst, id, count):
-    return '{path}/{base}{ip1}and{ip2}-flow{id}_num{count}_time{time}'.format(
+    return '{path}/{base}{ip1}and{ip2}-flow{id}_num{count}'.format(
         path=path,
         base=DPI_BASE_FILENAME,
         ip1=src,
         ip2=dst,
         id=id,
-        time=int(time()),
         count=count
     )
-
-# KNOCKING
-SECRET_PORT = 3141 # TODO: do not hardcode
 
 # SYNDEF
 # entrace key is based on src and dst IP
 def get_entrance_key(pkt):
     return '{}-{}'.format(pkt['IP'].src, pkt['IP'].dst)
 
-# Types of cloned packets
+# TYPES of cloned packets
 DPI_PKT = 1
 KNOCK_PKT = 2
 SRC_VALIDATION_SUCCESS_PKT = 3
