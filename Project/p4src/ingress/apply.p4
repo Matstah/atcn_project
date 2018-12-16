@@ -1,6 +1,7 @@
 // ingress apply
 
 meta.accept = 0;
+meta.flow_is_new = 0; // default for DPI
 //extern 2 intern
 if (
     standard_metadata.ingress_port == 1 ||
@@ -206,7 +207,6 @@ if (
 }
 //intern 2 extern
 // traffic generated internally is assumed to be "well-behaved" to some extent
-// TODO: internally started traffic is not inspected
 else if (
     standard_metadata.ingress_port == 4 ||
     standard_metadata.ingress_port == 5 ||
@@ -222,21 +222,40 @@ else if (
             if(hdr.tcp.isValid()){
                 hash_intern_tcp_packet();
                 if (hdr.tcp.syn == 1){
+                    // DPI: is flow is already known (and this is just a new SYN), do not select again for DPI
+                    bit<1> flow_was_inspected;
+                    inspected_flows.read(flow_was_inspected, meta.flow_id);
+                    if (flow_was_inspected != 1) {
+                        random_select_for_dpi();
+                    }
+
                     //first time traffic gets from inside to outside.. opens/ sets flow_is_known to 1, such that flow can enter from outside in.
                     time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_TCP);
                     known_flows.write(meta.flow_id, 1);
-                    random_select_for_dpi();
                 } else if (hdr.tcp.fin == 1){
                     known_flows.write(meta.flow_id, 0);
                     time_stamps.write(meta.flow_id, 0);
+
+                    // also forget flow for DPI
+                    bit<1> flow_was_inspected;
+                    inspected_flows.read(flow_was_inspected, meta.flow_id);
+                    if (flow_was_inspected == 1) {
+                        deselect_for_dpi();
+                    }
                 }
             }else if(hdr.udp.isValid()){
                 hash_intern_udp_packet();
                 // only save UDP flow if the packet is not a one-off (if source Port is not 0) and thus awaits a response
                 if(hdr.udp.srcPort != 0){
+                    // DPI: is flow is already known (and this is just a new SYN), do not select again for DPI
+                    bit<1> flow_was_inspected;
+                    inspected_flows.read(flow_was_inspected, meta.flow_id);
+                    if (flow_was_inspected != 1) {
+                        random_select_for_dpi();
+                    }
+
                     known_flows.write(meta.flow_id, 1);
                     time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_UDP);
-                    random_select_for_dpi();
                 }
             }
         }

@@ -56,8 +56,8 @@ header dpi_t { // DPI
     bit<32> dstAddr;
     bit<16> ingress_port;
     bit<32> flow_id;
-    bit<1> new_flow;
-    bit<7> unused;
+    bit<8> new_flow;
+    //bit<7> unused;
 } // 15 Bytes
 
 header controller_t{
@@ -70,7 +70,7 @@ struct metadata {
 
     // DPI
     bit<1> dpi_activated;
-    bit<1> flow_is_new;
+    bit<8> flow_is_new;
     port_t ingress_port; // DPI, because cloning resets all metadata
 
     //port knocking part

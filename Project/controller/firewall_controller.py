@@ -61,8 +61,8 @@ class Controller(object):
             self.set_blacklist_srcIP()
             self.set_blacklist_dstIP()
 
-        # DPI TODO: does this work if it is not set, or set to zero?
-        if a.dpi_prob:
+        # DPI
+        if a.dpi_prob >= 0:
             self.set_register('dpi', 0, a.dpi_prob)
 
         # Knocking
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     # parser.add_argument('--reset_todo') # TODO: reset single stuff
 
     # DPI
-    parser.add_argument('--dpi_prob', '-dp', type=int, required=False, help="Set inspection probability [percent] [0 for disabling]")
+    parser.add_argument('--dpi_prob', '-dp', type=int, required=False, default=-1, help="Set inspection probability [percent] [0 for disabling]")
 
     # Knocking TODO: deactivate when 0 # TODO: remember to translate knock timeout *1000000
     parser.add_argument('--knock', '-k', action='store_true', required=False, help='Flag to tell script it should set knocking stuff')

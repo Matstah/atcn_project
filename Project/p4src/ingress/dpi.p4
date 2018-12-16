@@ -18,7 +18,7 @@ action random_select_for_dpi() {
     // we have to make a detour...
     bit<1> inspect_bit = 0;
     if (rand < prob) {
-        meta.flow_is_new = 1;
+        meta.flow_is_new = (bit<8>) 1;
         inspect_bit = 1;
     }
     inspected_flows.write(meta.flow_id, inspect_bit);

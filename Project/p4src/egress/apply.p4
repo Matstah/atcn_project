@@ -13,19 +13,18 @@ if(standard_metadata.instance_type == 1){
         hdr.dpi.ingress_port = (bit<16>) meta.ingress_port;
         hdr.dpi.flow_id = (bit<32>) meta.flow_id;
         hdr.dpi.new_flow = meta.flow_is_new;
-        hdr.dpi.unused = (bit<7>) 0;
     }
-    if (meta.clone_id == 2){
+    else if (meta.clone_id == 2){
         //KNOCKER, tell controller to allow access on secret entry.
         hdr.udp.udp_length =12;
         truncate((bit<32>)46); //14 ether +20 ip+ 8 udp + 4 control_h = 46
     }
-    if (meta.clone_id == 3){
+    else if (meta.clone_id == 3){
         //SYN-source validation: tell controller to accept this src as verified.
         hdr.ipv4.totalLen = 44;
         truncate((bit<32>)58);
     }
-    if (meta.clone_id == 4){
+    else if (meta.clone_id == 4){
         // validated source malicious
         hdr.tcp.setInvalid();
         hdr.ipv4.totalLen = 24; // 20 Bytes of IPv4 header and 4 Bytes of clone_id (32 bits)

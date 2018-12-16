@@ -42,6 +42,7 @@ class Controller(object):
 
     def set_table_knocking_rules(self):
         #set knocking sequence to table
+        # TODO: reset table first to insert new rule after a restart?
         counter = 1
         for port in self.knocking_sequence:
             self.controller.table_add("knocking_rules", "port_rule", [str(port)], [str(self.delta_time), str(counter), str(len(self.knocking_sequence))])
@@ -55,6 +56,7 @@ class Controller(object):
         srcPort = pkt['UDP'].sport
         #hdr.ipv4.dstAddr : exact; hdr.ipv4.srcAddr : exact; hdr.tcp.dstPort(secret Port) : exact; hdr.tcp.srcPort : exact;
         self.controller.table_add("secret_entries", "go_trough_secret_port", [str(dstIP),str(srcIP),str(self.secret_port),str(srcPort)], [])
+        # TODO: typo in go_trough_secret_port --> through [!must also change in p4]
 
     def deparse_pack(self, pkt):
         # handler for packet parsing

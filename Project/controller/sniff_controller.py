@@ -7,12 +7,25 @@ from scapy.all import *
 import os
 from os import path, makedirs, chmod, chown
 import traceback
+import pickle
 from time import time
 import Dpi
 
 # DPI logging stuff
 DPI_FOLDER_NAME='dpi_log'
 DPI_BASE_FILENAME='dpi_'
+
+# create dpi file name based on params
+def dpi_file_name(path, src, dst, id, count):
+    return '{path}/{base}{ip1}and{ip2}-flow{id}_num{count}_time{time}'.format(
+        path=path,
+        base=DPI_BASE_FILENAME,
+        ip1=src,
+        ip2=dst,
+        id=id,
+        time=int(time()),
+        count=count
+    )
 
 # KNOCKING
 SECRET_PORT = 3141 # TODO: do not hardcode
@@ -97,31 +110,15 @@ class Controller(object):
         create = False
         if flow not in self.dpi_files:
             count = 1
-            file_name = '{path}/{base}{time}_{ip1}and{ip2}-flow{id}_{count}'.format(
-                path=self.dpi_path,
-                base=DPI_BASE_FILENAME,
-                ip1=d['src'],
-                ip2=d['dst'],
-                id=flow,
-                time=int(time()),
-                count=count
-            )
+            file_name = dpi_file_name(self.dpi_path, d['src'], d['dst'], flow, count)
             self.dpi_files[flow] = [[file_name, count]]
             create = True
         else:
             # flow_id already seen once
             if is_new:
-                # flow is new, so append to array with new name (old count +1)
+                # flow is new (after a timeout), so append to array with new name (old count +1)
                 count = self.dpi_files[flow][-1][1] + 1
-                file_name = '{path}/{base}{time}_{ip1}and{ip2}-flow{id}_{count}'.format(
-                    path=self.dpi_path,
-                    base=DPI_BASE_FILENAME,
-                    ip1=d['src'],
-                    ip2=d['dst'],
-                    id=flow,
-                    time=int(time()),
-                    count=count
-                )
+                file_name = dpi_file_name(self.dpi_path, d['src'], d['dst'], flow, count)
                 self.dpi_files[flow].append([file_name, count])
                 create = True
 
@@ -140,7 +137,7 @@ class Controller(object):
         file = self.get_dpi_file(d)
         with open(file, 'a+') as log:
             log.write(content)
-            log.close() # TODO: maybe move this to the end of the script?
+            log.close()
 
     ### KNOCKING
     def allow_entrance_knocking(self,pkt):
@@ -178,7 +175,7 @@ class Controller(object):
     def save_entrances(self):
         # if there are no entries: delete file if it exists
         if not self.allowed_entrances:
-            print('No entries to save in file, because there are is no src marked as valid.')
+            print('No entries to save in file, because there is no src marked as valid.')
             try:
                 os.remove(self.entrance_file)
             except:
@@ -215,13 +212,14 @@ class Controller(object):
         self.pkt_counter = self.pkt_counter + 1
         print('Cloned packet {}'.format(self.pkt_counter))
         [clone_type, rest] = deparse_pack(pkt)
-        print('Received packet type: ' + str(clone_type))
 
         if clone_type == DPI_PKT:
+            print('Received packet type: ' + green('DPI'))
             text = 'DPI Packet - Packet Count = {}\n'.format(self.pkt_counter)
             text = text + pkt.show(dump=True) + '\n'
             try:
                 dpi = DpiHeader(rest)
+                print(blue(dpi.show(dump=True))) # TODO comment
                 dpi_dict = Dpi.parse(dpi)
                 text = '{t}{c}{b}{l}{b}'.format(t=text, c=Dpi.stringify(dpi_dict), b='\n', l='-'*10)
                 self.log_dpi(text, dpi_dict)
@@ -229,10 +227,13 @@ class Controller(object):
                 print(red('Could not extract DPI information'))
                 traceback.print_exc()
         elif clone_type == KNOCK_PKT:
+            print('Received packet type: ' + green('KNOCK'))
             self.allow_entrance_knocking(pkt)
         elif clone_type == SRC_VALIDATION_SUCCESS_PKT:
+            print('Received packet type: ' + green('SRC VALIDATED'))
             self.allow_entrance_valid_source(pkt)
         elif clone_type == SRC_VALIDATION_MALICIOUS_PKT:
+            print('Received packet type: ' + green('SRC MALICIOUS'))
             self.forbid_entrance_valid_source(pkt)
             srcIP = pkt['IP'].src
             self.controller.table_add("blacklist_src_ip", "drop", ['{0}->{0}'.format(srcIP)],[],'1337')
@@ -260,8 +261,8 @@ class DpiHeader(Packet):
         BitField('dstIpAddr',0,32),
         BitField('ingress_port',0,16),
         BitField('flow_id',0,32),
-        BitField('new_flow',0,1),
-        BitField('unused',0,7)
+        BitField('new_flow',0,8),
+        # BitField('unused',0,7)
     ]
 
 ### Packet Deparser

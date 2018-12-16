@@ -16,15 +16,13 @@ DPI_BASE_FILENAME='dpi_'
 # Register names
 INGRESS_NAME = 'MyIngress'
 PROB_REGISTER = 'inspection_probability'
-DEBUG_REGISTER = 'options'
 PROB_INDEX = 0
-DEBUG_INDEX = 0
 
 # Controller
 ###########
 class Controller(object):
 
-    def __init__(self, sw_name, inspection_probability, debug):
+    def __init__(self, sw_name, inspection_probability):
 
         self.topo = Topology(db=path.split(path.abspath(__file__))[0] + "/../topology.db")
         self.sw_name = sw_name
@@ -32,7 +30,6 @@ class Controller(object):
         self.inspection_probability = inspection_probability
         self.file_path = self.get_log_path()
         self.log_files = {}
-        self.debug = debug
         self.cpu_port =  self.topo.get_cpu_port_index(self.sw_name)
         self.controller = SimpleSwitchAPI(self.thrift_port)
         self.uid = int(subprocess.check_output(['id', '-u', 'p4']))
@@ -43,7 +40,7 @@ class Controller(object):
     def init(self):
         self.dpi_counter = 0
         self.create_log_folder()
-        self.add_mirror(100) # DPI: mirror_id = 100
+        self.add_mirror(100)
 
     def add_mirror(self, mirror_id):
         if self.cpu_port:
@@ -65,13 +62,6 @@ class Controller(object):
 
     def deactivate_dpi(self):
         self._set_register(PROB_REGISTER, PROB_INDEX, 0)
-
-    def activate_debug(self):
-        if self.debug:
-            self._set_register(DEBUG_REGISTER, DEBUG_INDEX, 1)
-
-    def deactivate_debug(self):
-        self._set_register(DEBUG_REGISTER, DEBUG_INDEX, 0)
 
     def get_log_path(self):
         return '{}/{}'.format(path.split(path.abspath(__file__))[0], DPI_FOLDER_NAME)
@@ -134,7 +124,7 @@ class Controller(object):
         res, d = Dpi.handle_dpi(pkt, self.dpi_counter)
         if res == 'None':
             return
-        
+
         if self.debug and d['debug']:
             print(res)
         if bool(self.inspection_probability) and d['inspect']:
@@ -146,7 +136,6 @@ class Controller(object):
 
         # set functionality on firewall
         self.activate_dpi()
-        self.activate_debug()
 
         # DPI loop
         cpu_port_intf = str(self.topo.get_cpu_port_intf(self.sw_name).replace("eth0", "eth1"))
@@ -164,12 +153,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--sw', type=str, required=False, default="fir", help='firewall name [default fir]')
     parser.add_argument('-p', '--probability', type=int, required=False, default=0, help='probability for a flow to get inspected and written to a file [default: 0 = no inspection]')
-    parser.add_argument('-d', '--debug', action='store_true', help='If activated, each packet gets sent to the controller and is printed by the script')
     args = parser.parse_args()
 
     controller = None
     do_cleanup = 1
-    # NOTE: this try-except-else stuff could be handled better, but whatever...
+    # NOTE: this try-except-else stuff could be handled better, but yeah...
     # NOTE: also the opening and closing of files is not optimal...
     try:
         controller = Controller(args.sw, args.probability, args.debug)
@@ -179,11 +167,8 @@ if __name__ == "__main__":
         traceback.print_exc()
         if do_cleanup:
             controller.deactivate_dpi()
-            controller.deactivate_debug()
             do_cleanup = 0
     else:
         if do_cleanup:
             controller.deactivate_dpi()
-            controller.deactivate_debug()
         print('CONTROLLER REACHED THE END')
-    # TODO: change file permissions.. should be deletable
