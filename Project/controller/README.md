@@ -67,7 +67,7 @@ There are two blacklists. One that looks at dst ip address for traffic from inte
 The dpi probability decides how likely a flow gets selected with the first (internal!) SYN packet. The *sniff_controller* logs the chosen flows.
 
 ##### Port Knocking:
-The *firewall_controller* sets up a port knocking tracker on the switch via table entries. The timeout defines the maximal time a _kocker_ can take in between knocks.
+The *firewall_controller* sets up a port knocking tracker on the switch via table entries. The timeout defines the maximal time a _knocker_ can take in between knocks.
 
 All UDP traffic, that can not pass the stateful firewall will be dropped by the firewall, independently of these settings.
 
@@ -105,4 +105,4 @@ This script also sets the *secret port*, which will be opened to a specific sour
 If the controller terminates and there are valid sources saved in the dictionary, it is saved in a pickle file as `./table_files/source_accepted.pkl`. If the dictionary is empty, the file is deleted (if there was one to begin with). With each start of the controller the file is loaded (if available) and stored in the dictionary. If you restart the whole architecture with `p4run`, make sure that there is _no_ file in `./table_files` or remove the directory entirely.
 
 ## heavy_hitter_controller.py
-This scripts connects to the firewall and then stays in a loop. Every `5` seconds (hardcoded!) it resets the bloom filter of the heavy hitter detector for validated sources. This means that a validated source cannot send an amount of SYN packets that exceeds the threshold on the firewall (also hardcoded to low `10` because it is easier to show in a demo, but should be determined on the application behind the firewall).
+This scripts connects to the firewall and then stays in a loop. Every `5` seconds (hardcoded!) it resets the bloom filter of the heavy hitter detector for validated sources. This means that a validated source cannot send an amount of SYN packets that exceeds the threshold on the firewall (also hardcoded to low `10` because it is easier to show in a demo, but should be chosen and based on the application behind the firewall).
