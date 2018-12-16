@@ -1,12 +1,11 @@
 # Controllers
 All these scripts can be found at `~/atcn-project/Project/controller` and the commands are expected to be executed from there as in the following documentation.
 
-There are three controllers:
-| controller              | functionality
-| :----------             |:-------------
-| firewall_controller     | Controller to de- / activate functionalities or set other parameters.
-| sniff_controller        | The "brain" that handles cloned packets from firewall.
-| heavy_hitter_controller | Loops endlessly and resets filter for heavy hitter detection.
+| controller | short description |
+| -------- | -------- |
+| firewall_controller  | Controller to de- / activate functionalities or set other parameters.   |
+| sniff_controller   |  The "brain" that handles cloned packets from firewall.   |
+| heavy_hitter_controller | Loops endlessly and resets filter for heavy hitter detection. |
 
 This structure gives user the ability to interact with the firewall without stopping the whole thing. The general idea is the following:
 1. Start firewall_controller with no arguments, which sets the default values, which are generally useful. (Although we set default values that serve the purpose of testing and demonstration.)
@@ -103,7 +102,7 @@ This script also sets the *secret port*, which will be opened to a specific sour
 1. Grant access packet: The appropriate table entry gets written which returns an ID that is saved in a dictionary.
 2. Revoke access packet: The validation of a client has to be revoked, so the controller deletes the entry in the table from 1. with the saved ID. Additionally, the client gets blacklisted.
 
-If the controller terminates and there are valid sources saved in the dictionary, it is saved in a pickle file as `./table_files/source_accepted.pkl`. If the dictionary is empty, the file is deleted (if there was one to begin with). With each start of the controller the file is loaded (if available) and stored in the dictionary. If you restart the whole architecture with `p4run`, make sure that there is _no_ file in `./table_files` or remove the directory entirely. 
+If the controller terminates and there are valid sources saved in the dictionary, it is saved in a pickle file as `./table_files/source_accepted.pkl`. If the dictionary is empty, the file is deleted (if there was one to begin with). With each start of the controller the file is loaded (if available) and stored in the dictionary. If you restart the whole architecture with `p4run`, make sure that there is _no_ file in `./table_files` or remove the directory entirely.
 
 ## heavy_hitter_controller.py
 This scripts connects to the firewall and then stays in a loop. Every `5` seconds (hardcoded!) it resets the bloom filter of the heavy hitter detector for validated sources. This means that a validated source cannot send an amount of SYN packets that exceeds the threshold on the firewall (also hardcoded to low `10` because it is easier to show in a demo, but should be determined on the application behind the firewall).
