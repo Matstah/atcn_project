@@ -167,7 +167,7 @@ class Controller(object):
         if k in self.allowed_entrances:
             id = self.allowed_entrances.pop(k)
             self.controller.table_delete('source_accepted', id)
-            print('src-dst combination {} invalidated'.format(green(id)))
+            print('src-dst combination {} invalidated'.format(green(k)))
         else:
             print(red('Could not read ID from dict with key ' + k))
 
