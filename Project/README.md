@@ -22,7 +22,7 @@ Being in the Project folder, we can use the following command to start mininet
 ```
 sudo p4run
 ```
-Next use pingall to check for full connectivity. Now we can activate the firewall.
+Next use `pingall` to check for full connectivity. Now we can activate the firewall.
 
 ## Firewall
 

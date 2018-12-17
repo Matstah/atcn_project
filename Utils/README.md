@@ -1,10 +1,11 @@
 # Utils
 Import package with
 ```
-import sys
-sys.path.append('/home/p4/atcn-project/Utils')
+rel_path = '/../path/from/script/to/Utils/folder/Utils'
+script_path = path.split(path.abspath(__file__))[0]
+sys.path.append(script_path + rel_path)
+from TopoHelper import TopoHelper
 ```
-!! Adjust path according to your structure !!
 
 ## TopoHelper
 Usage:

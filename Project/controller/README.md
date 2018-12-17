@@ -41,6 +41,10 @@ Help:
 
 --filter_clear   | -fc FILTER_CLEAR [FILTER_CLEAR ...]
   clear specified filter from ['wp','bs','bd']
+
+--filter_set     | -fs FILTER_SET [FILTER_SET ...]
+  set only specified filter form [wp,bs,bd]
+
   'wp' = 'whitelist_tcp_dst_port'
   'bs' = 'blacklist_src_ip'
   'bd' = 'blacklist_dst_ip'
@@ -51,6 +55,7 @@ Examples (only arguments shown, with explanation):
 -dp 50                     set dpi probability to 50%
 -ks 100 50 150 300 -kt 3   define new knock sequence with timeout of 3 seconds
 -fc 'bs' 'bd'              clear the two blacklist tables
+-fs 'wp' -fc 'bs' -dp 70   change multiple things at once
 ```
 Our default values:
 ```

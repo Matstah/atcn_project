@@ -25,10 +25,26 @@ TABLE_DEFAULT_ACTIONS = {
     'source_accepted': 'NoAction'
 }
 
+# containing arguments to _file_to_table() and 'table' is needed for _clear_tables()
 FILTERS = {
-    'wp': 'whitelist_tcp_dst_port',
-    'bs': 'blacklist_src_ip',
-    'bd': 'blacklist_dst_ip'
+    'wp':   {
+        'table' : 'whitelist_tcp_dst_port',
+        'rel_path': '/../filters/ext2in_whitelist_tcp_dst_ports.txt',
+        'action': 'NoAction',
+        'need_prio': False
+    },
+    'bs':   {
+        'table' : 'blacklist_src_ip',
+        'rel_path': '/../filters/ext2in_blacklist_srcIP.txt',
+        'action': 'drop',
+        'need_prio': True
+    },
+    'bd':   {
+        'table' : 'blacklist_dst_ip',
+        'rel_path': '/../filters/in2ext_blacklist_dstIP.txt',
+        'action': 'drop',
+        'need_prio': True
+    }
 }
 
 # Register names
@@ -51,33 +67,41 @@ def _col(s, code):
 
 class Controller(object):
 
+    # The topo object is commented and an the ports hardcoded,
+    # because we do not change the topology
     def __init__(self):
         self.script_path = path.split(path.abspath(__file__))[0]
-        # self.topo = Topology(db=self.script_path + "/../topology.db") Not needed: things are hardcoded below
+        # self.topo = Topology(db=self.script_path + "/../topology.db")
         self.sw_name = 'fir'
         self.thrift_port = 9090 # self.topo.get_thrift_port(sw_name)
         self.controller = SimpleSwitchAPI(self.thrift_port)
-        self.cpu_port =  8 # self.topo.get_cpu_port_index(self.sw_name)
+        self.cpu_port = 8 # self.topo.get_cpu_port_index(self.sw_name)
 
+    # set register of functionality 'name' to 'value' at 'index'
     def set_register(self, name, index, value):
         register = REGISTERS[name]
         self.controller.register_write('{}.{}'.format(INGRESS_NAME, register), index, value)
         print('{}: {} - {}'.format(green(name.upper()), register, green(value)))
 
     # ARGUMENT SWITCHING
+
     # a = args namespace object
-    # default = bool if script started with default stuff
+    # default = bool if script started with default stuff (meaning no arguments)
+    # All functionalities are either reset, set to default, or specified value is applied
     def do_things(self, a, default):
         # Filter
         if a.no_filter:
-            self._clear_tables([FILTERS[k] for k in ALL_FILTERS])
+            self._clear_tables([FILTERS[k]['table'] for k in ALL_FILTERS])
         elif default:
             self.set_table_defaults()
-            self.set_whitelist_tcp_port()
-            self.set_blacklist_srcIP()
-            self.set_blacklist_dstIP()
-        elif a.filter_clear[0] != -1:
-            self._clear_tables([FILTERS[k] for k in a.filter_clear])
+            for f in ALL_FILTERS:
+                 self._file_to_table(**FILTERS[f])
+        else:
+            if a.filter_clear[0] != -1:
+                self._clear_tables([FILTERS[k]['table'] for k in a.filter_clear])
+            if a.filter_set[0] != -1:
+                for f in a.filter_set:
+                    self._file_to_table(**FILTERS[f])
 
         # DPI
         if a.no_dpi:
@@ -94,10 +118,23 @@ class Controller(object):
             self.set_table_knocking_rules(KNOCK_SEQUENCE_DEFAULT, a.knock_timeout*TIMEOUT_CONVERSION)
         elif a.knock_sequence[0] > 0:
             self.set_table_knocking_rules(a.knock_sequence, a.knock_timeout*TIMEOUT_CONVERSION)
+    ### END OF do_things
 
     # Filters lists
     ###############
-    def _file_to_table(self, rel_path, table, action, need_prio=False):
+
+    # Reads file and fills table according to content
+    # rel_path = relative path from this script to the file
+    # table = name of the table to set
+    # action = the action the parameters from the file are assigned to
+    # need_prio = some actions need a priority for tiebreaking on the firewall.
+    #               We just set an arbitrary priority because it does not affect
+    #               our desired behaviour
+    def _file_to_table(self, rel_path='None', table='None', action='None', need_prio=False):
+        if rel_path == 'None':
+            print(red('_file_to_table needs params'))
+            return
+
         print('Fill table {} with data from {}'.format(green(table), green(rel_path)))
         with open(self.script_path + rel_path, 'r') as file:
              data = file.readlines()
@@ -109,41 +146,23 @@ class Controller(object):
                  else:
                      self.controller.table_add(table, action, [str(d)])
 
+    # clears all tables (does not affect default action)
     def _clear_tables(self, tables):
         for table in tables:
             self.controller.table_clear(table)
             print('table ' + green(table + ' cleared'))
 
+    # sets all default actions for all our tables
     def set_table_defaults(self):
         for table, action in TABLE_DEFAULT_ACTIONS.items():
             print('Set table default for {} to {}'.format(green(table), green(action)))
             self.controller.table_set_default(table, action, [])
 
-    def set_whitelist_tcp_port(self):
-        self._file_to_table(
-            "/../filters/ext2in_whitelist_tcp_dst_ports.txt",
-            'whitelist_tcp_dst_port',
-            'NoAction'
-        )
-
-    def set_blacklist_srcIP(self):
-        self._file_to_table(
-            "/../filters/ext2in_blacklist_srcIP.txt",
-            'blacklist_src_ip',
-            'drop',
-            need_prio=True
-        )
-
-    def set_blacklist_dstIP(self):
-        self._file_to_table(
-            "/../filters/in2ext_blacklist_dstIP.txt",
-            'blacklist_dst_ip',
-            'drop',
-            need_prio=True
-        )
-
     # knocking
     ##########
+
+    # installs the required knocking sequence on the firewall that is needed for entrance
+    # the timeout specifies the time the knocker can take in between knocks
     def set_table_knocking_rules(self, sequence, timeout):
         # reset table first to insert the new rule from scratch
         self._clear_tables(['knocking_rules'])
@@ -160,6 +179,7 @@ class Controller(object):
             self.controller.table_add("knocking_rules", "port_rule", [str(port)], [str(timeout), str(counter), str(len(sequence))])
             counter += 1
 
+### MAIN
 if __name__ == "__main__":
     only_defaults=False
     if len(sys.argv) < 2:
@@ -181,12 +201,10 @@ if __name__ == "__main__":
     # Filters
     parser.add_argument('--no_filter', action='store_true', help='Deactive filling of tables with file values')
     parser.add_argument('--filter_clear', '-fc', nargs='+', default=[-1], help='clear specified filter from [wp,bs,bd]')
-    # TODO: and other files (that have to be written in other controller every time table_add is called)
+    parser.add_argument('--filter_set', '-fs', nargs='+', default=[-1], help='set only specified filter form [wp,bs,bd]')
 
     # get all options
     args = parser.parse_args()
-    # print(args)
-    # exit(0)
 
     try:
         controller = Controller()

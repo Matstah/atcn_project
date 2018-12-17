@@ -92,17 +92,22 @@ class Controller(object):
             print('mirror_id={} added to cpu_port={}'.format(mirror_id, self.cpu_port))
 
     ### DPI
+    # returns path to dpi log folder
     def get_dpi_path(self):
         return '{}/{}'.format(path.split(path.abspath(__file__))[0], DPI_FOLDER_NAME)
 
+    # creates the dpi folder if it does not exits and gives permissions to be deleted.
     def create_dpi_folder(self):
         if not path.exists(self.dpi_path):
             makedirs(self.dpi_path, 0o777)
             chown(self.dpi_path, self.uid, self.gid)
 
-    # d = dict with content of dpi parsing
-    # file format: dpi_<time>_<ip1>and<ip2>-flow<id>
-    def get_dpi_file(self, d): # TODO: more comments
+    # For a given flow, the path to the file is returned
+    # If the file did not exist yet, or the flow timed out, a new file is created
+    # The mode and owner of the files are changed to the p4 user.
+    # This is because if the script is run with 'sudo',
+    # the file could not conveniently be removed by the user
+    def get_dpi_file(self, d): # d = dict with content of dpi parsing
         flow = d['flow_id']
         is_new = d['new_flow']
         create = False
@@ -130,7 +135,7 @@ class Controller(object):
         # return the last file name (might have been created just now)
         return self.dpi_files[flow][-1][0]
 
-    # TODO: comment
+    # The content (prepared beforehand) is written to the correct dpi log file
     def log_dpi(self, content, d):
         file = self.get_dpi_file(d)
         with open(file, 'a+') as log:
@@ -138,6 +143,7 @@ class Controller(object):
             log.close()
 
     ### KNOCKING
+    # set client to allowed list as reported by firewall
     def allow_entrance_knocking(self,pkt):
         #set table entry to allow access through secret port
         srcIP = pkt['IP'].src
@@ -148,7 +154,7 @@ class Controller(object):
         # TODO: typo in go_trough_secret_port --> through [!must also change in p4]
 
     ### SYNDEF
-    # TODO: comment
+    # set client to allowed list as reported by firewall
     def allow_entrance_valid_source(self,pkt):
         srcIP = pkt['IP'].src
         dstIP = pkt['IP'].dst
@@ -159,7 +165,8 @@ class Controller(object):
         print('{src} validation successful. dst={dst}, sport={sport}, dport={dport}'.format(src=green(srcIP), dst=dstIP, sport=srcPort, dport=dstPort))
         self.allowed_entrances[get_entrance_key(pkt)] = id
 
-    # TODO: comment
+    # remove client to allowed list as reported by firewall
+    # (gets also blacklisted but not here!)
     def forbid_entrance_valid_source(self, pkt):
         k = get_entrance_key(pkt)
         if k in self.allowed_entrances:
@@ -169,7 +176,8 @@ class Controller(object):
         else:
             print(red('Could not read ID from dict with key ' + k))
 
-    # TODO: comment
+    # If the controller has set clients to the valid source list and terminates
+    # he remembers the clients in a pickle file
     def save_entrances(self):
         # if there are no entries: delete file if it exists
         if not self.allowed_entrances:
@@ -187,13 +195,18 @@ class Controller(object):
         with open(self.entrance_file, 'w+b') as f:
             pickle.dump(self.allowed_entrances, f, pickle.HIGHEST_PROTOCOL)
 
-    # TODO: comment
+    # If the controller got restarted there might be a pickle file with Entries
+    # of supposedly valid sources. They are read into the dictionary againg,
+    # because the entry ID might be needed in the case of a malicious source
     def read_entrances(self):
-        if os.path.exists(self.entrance_file):
-            with open(self.entrance_file, 'rb') as f:
-                self.allowed_entrances = pickle.load(f)
-        else:
-            print('No allowed entrance file to read. Start with empty dict.')
+        try:
+            if os.path.exists(self.entrance_file):
+                with open(self.entrance_file, 'rb') as f:
+                    self.allowed_entrances = pickle.load(f)
+            else:
+                print('No "allowed entrance file" to read. Start with empty dict.')
+        except Exception:
+            print(red('There was a problem when trying reading "allowed entrance file". Continue with empty dict!'))
 
     ### RUN
     def run(self):
@@ -211,6 +224,7 @@ class Controller(object):
         print('Cloned packet {}'.format(self.pkt_counter))
         [clone_type, rest] = deparse_pack(pkt)
 
+        ### DPI ###
         if clone_type == DPI_PKT:
             print('Received packet type: ' + green('DPI'))
             text = 'DPI Packet - Packet Count = {}\n'.format(self.pkt_counter)
@@ -222,14 +236,20 @@ class Controller(object):
                 text = '{t}{c}{b}{l}{b}'.format(t=text, c=Dpi.stringify(dpi_dict), b='\n', l='-'*10)
                 self.log_dpi(text, dpi_dict)
             except:
-                print(red('Could not extract DPI information'))
+                print(red('Could not extract or log DPI information'))
                 traceback.print_exc()
+
+        ### KNOCK ###
         elif clone_type == KNOCK_PKT:
             print('Received packet type: ' + green('KNOCK'))
             self.allow_entrance_knocking(pkt)
+
+        ### SYNDEF: Entry ###
         elif clone_type == SRC_VALIDATION_SUCCESS_PKT:
             print('Received packet type: ' + green('SRC VALIDATED'))
             self.allow_entrance_valid_source(pkt)
+
+        ### SYNDEF: Deny ###
         elif clone_type == SRC_VALIDATION_MALICIOUS_PKT:
             print('Received packet type: ' + green('SRC MALICIOUS'))
             self.forbid_entrance_valid_source(pkt)
@@ -239,6 +259,7 @@ class Controller(object):
             print('{} is now blacklisted'.format(green(srcIP)))
         else:
             print(red('Unknown clone type number: ' + str(clone_type)))
+    ### END OF RECV_MSG
 
 ### CLASS: ControlHeader
 # For scapy: Contains packet id such that controller knows what content the packet holds
@@ -260,13 +281,12 @@ class DpiHeader(Packet):
         BitField('ingress_port',0,16),
         BitField('flow_id',0,32),
         BitField('new_flow',0,8),
-        # BitField('unused',0,7)
     ]
 
 ### Packet Deparser
+# get payload from last layer, which is the ControlHeader (with ID)
+# plus potential rest of packet (DPI)
 def deparse_pack(pkt):
-    # get payload from last layer, which is the ControlHeader (with ID)
-    # plus potential rest of packet (DPI)
     payload = None
     for layer in [Ether, IP, TCP, UDP]:
         layer_content = pkt.getlayer(layer)
