@@ -24,7 +24,7 @@ if (
 
                     // Count syn packets to verify that valid source performs
                     //   no syn flood attack
-                    if(hdr.tcp.syn == 1){
+                    if(hdr.tcp.syn == 1 && hdr.tcp.ack != 1){
                         update_bloom_filter();
                         if(meta.counter_one > PACKET_THRESHOLD &&
                             meta.counter_two > PACKET_THRESHOLD) {
@@ -290,7 +290,7 @@ else if (
                 hash_intern_tcp_packet();
 
                 // we establish a connection with an external dst
-                if (hdr.tcp.syn == 1) {
+                if (hdr.tcp.syn == 1 && hdr.tcp.ack != 1) {
                     // select flow (randomly) for dpi, but perform action if we
                     // have not already started inspecting it
                     bit<1> flow_was_inspected;

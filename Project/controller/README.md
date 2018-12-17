@@ -45,17 +45,20 @@ Help:
 --filter_set     | -fs FILTER_SET [FILTER_SET ...]
   set only specified filter form [wp,bs,bd]
 
-  'wp' = 'whitelist_tcp_dst_port'
-  'bs' = 'blacklist_src_ip'
-  'bd' = 'blacklist_dst_ip'
+  wp = 'whitelist_tcp_dst_port'
+  bs = 'blacklist_src_ip'
+  bd = 'blacklist_dst_ip'
 ```
 Examples (only arguments shown, with explanation):
 ```
 --no_dpi                   deactivate dpi
 -dp 50                     set dpi probability to 50%
 -ks 100 50 150 300 -kt 3   define new knock sequence with timeout of 3 seconds
--fc 'bs' 'bd'              clear the two blacklist tables
--fs 'wp' -fc 'bs' -dp 70   change multiple things at once
+-fc bs bd                  clear the two blacklist tables
+-fc bs -fs bs              reset blacklist: 1. clear, 2. fill with default from file
+                           e.g. good to test synflood mechanism again from same
+                           source because validation is not possible if blacklisted
+-fs wp -fc bs -dp 70       change multiple things at once
 ```
 Our default values:
 ```
