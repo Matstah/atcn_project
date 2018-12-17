@@ -107,10 +107,6 @@ if __name__ == "__main__":
 
     # start sending from host or dispatch to host
     if (args.local and not args.on_remote):
-        # TODO: open receive terminals first
-        #if(args.receive):
-        #    os.system("xterm -e 'bash -c \"sudo apt-get update; exec bash\"'")
-
         # call script on host with same params, plus on_remote flag to avoid loop
         from subprocess import call
         cmd = ["mx", args.src, 'python'] + sys.argv + ['--on_remote']
@@ -118,7 +114,9 @@ if __name__ == "__main__":
         call(cmd)
     else:
         # load globals
-        topo = Topology(db="/home/p4/atcn-project/Project/topology.db")
+        script_path = os.path.split(os.path.abspath(__file__))[0]
+        topo = Topology(db=script_path+'/../topology.db')
 
+        # start
         send(args.dst, args.packets, args.sleep, args.udp, args.i2e, showPacket=args.show)
 # END MAIN

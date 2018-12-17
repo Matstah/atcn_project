@@ -8,7 +8,6 @@ import random
 import struct
 import logging as log
 
-from p4utils.utils.topology import Topology
 from scapy.all import *
 import time
 import re

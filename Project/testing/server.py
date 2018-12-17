@@ -7,13 +7,14 @@ import argparse
 import logging as log
 import time
 
-sys.path.append('/home/p4/atcn-project/Utils')
+script_path = os.path.split(os.path.abspath(__file__))[0]
+sys.path.append(script_path + '/../../Utils')
 from TopoHelper import TopoHelper
 
 from scapy.all import *
 
 # CONSTANTS
-TOPO_FILE = '../topology.db'
+TOPO_FILE = script_path + '/../topology.db'
 SYNACK_FLAG=0x12
 FIN_FLAG=1
 FINACK_FLAG=0x10

@@ -229,6 +229,9 @@ if __name__ == "__main__":
         call(cmd)
     else:
         # load globals
-        topo = Topology(db="/home/p4/atcn-project/Project/topology.db")
+        script_path = os.path.split(os.path.abspath(__file__))[0]
+        topo = Topology(db=script_path+'/../topology.db')
+
+        # start
         send(args.dst, args.knock_seq, args.secret_port , showPacket=args.show)
 # END MAIN
