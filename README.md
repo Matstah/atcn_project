@@ -80,6 +80,6 @@ See comments enclosed in \*.
 TODO: maybe put final pdf here
 
 ## Scripts & Utils
-**Note**: Was used in the beginning, but things might not work as expected now, because some later changes broke stuff. Mostly adding the cpu_port and the additional controller host for sniffing cloned packets changed things in the topology that were not considered.
+**Note**: Was used in the beginning to gather information of the topology. For example to get all information of a host to check if our setup does what is expected (e.g. write correct MAC address, etc.)
 
-Utils contains `TopoHelper` which gathers some useful information about the topology. Scripts contains a script that uses the TopoHelper module and displays some stuff.
+Utils contains `TopoHelper` which gathers some useful information about the topology. Scripts contains a script that uses the TopoHelper module to display information or draw the topology.

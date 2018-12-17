@@ -17,6 +17,7 @@ log*/
 pcap*/
 
 *.db
+!Scripts/*.db
 
 *.p4i
 *.p4rt

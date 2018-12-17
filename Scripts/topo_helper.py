@@ -5,15 +5,19 @@ Requires matplotlib:
     python -m pip install -U matplotlib --user
 """
 import sys
-sys.path.append('/home/p4/atcn-project/Utils')
+import argparse
+from os import path
+
+script_path = path.split(path.abspath(__file__))[0]
+default_topo = script_path + '/topology_without_cpu_port.db'
+
+sys.path.append(script_path + '/../Utils')
 from TopoHelper import TopoHelper
 
-
 if __name__ == "__main__":
-    import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--topo', type=str, default='../Project/topology.db', help='Topology database file')
-    parser.add_argument('-d', '--draw', action='store_true', required=False, help='Flag: draw topology [DOES NOT WORK ANYMORE]')
+    parser.add_argument('--topo', type=str, default=default_topo, help='Topology database file [default is a specific file!!]')
+    parser.add_argument('-d', '--draw', action='store_true', required=False, help='Flag: draw topology')
     parser.add_argument('-e', '--edge', type=str, required=False, help='Edge label type. Choose from one of [port, ip, mac]')
     parser.add_argument('-i', '--info', action='store_true', required=False, help='Flag: get info of topo')
     parser.add_argument('-t', '--type', type=str, default='all', help='With INFO: show only for one of [external, internal, switches]')

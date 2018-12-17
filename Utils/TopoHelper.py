@@ -8,7 +8,7 @@ import pprint as pp
 
 # CONSTANTS
 INDENT_DEPTH = 2
-HORIZONTAL_SEPARATION = 1
+HORIZONTAL_SEPARATION = 2
 VERTICAL_SEPARATION = 2
 STANDARD_NODE_SIZE = 650
 SWITCH_NODE_SIZE_FACTOR = 1.5
@@ -31,7 +31,7 @@ COMPONENT_TO_PARAMS = {
         'size': STANDARD_NODE_SIZE*HOST_NODE_SIZE_FACTOR
     },
     'internal_hosts': {
-        'x': 3,
+        'x': 2,
         'shape': 's',
         'color': 'g',
         'size': STANDARD_NODE_SIZE*HOST_NODE_SIZE_FACTOR
@@ -43,13 +43,13 @@ COMPONENT_TO_PARAMS = {
         'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
     },
     'internal_gateways' : {
-        'x': 2,
+        'x': 1.5,
         'shape': 'd',
         'color': 'b',
         'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
     },
     'servers': {
-        'x': 3,
+        'x': 2,
         'shape': 's',
         'color': 'y',
         'size': 800
@@ -207,11 +207,8 @@ class TopoHelper(object):
         """ END DEBUG """
 
         # draw network nodes with their params
-        my_nodes = []
         for type, components in self.components.items():
-            # print('type={}, components={}'.format(type, components))
             params = COMPONENT_TO_PARAMS[type]
-            my_nodes = my_nodes + components
             nx.draw_networkx_nodes(G, self.positions,
                 node_shape = params['shape'],
                 node_color = params['color'],
@@ -220,22 +217,9 @@ class TopoHelper(object):
             )
 
         # draw all edges
-        # -- get the necessairy edges
-        # edges = []
-        # for edge in G.edges():
-        #     good = True
-        #     for node in edge:
-        #         if(re.match(r"sw-cpu", node)):
-        #             good = False
-        #     if good:
-        #         edges.append(edge)
-        # # -- draw
-        # print(my_nodes)
-        # print(edges)
-        # nx.draw_networkx_edges(G, self.positions,
-        #     nodelist = my_nodes,
-        #     edge_list = edges
-        # )
+        nx.draw_networkx_edges(G, self.positions,
+            edge_list = G.edges()
+        )
 
         # label the nodes
         nx.draw_networkx_labels(G, self.positions,
