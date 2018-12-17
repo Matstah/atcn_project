@@ -51,13 +51,12 @@ header tcp_t{
     bit<16> urgentPtr; //6
 }//20
 
-header dpi_t { // DPI
+header dpi_t {
     bit<32> srcAddr;
     bit<32> dstAddr;
     bit<16> ingress_port;
     bit<32> flow_id;
     bit<8> new_flow;
-    //bit<7> unused;
 } // 15 Bytes
 
 header controller_t{
@@ -71,7 +70,8 @@ struct metadata {
     // DPI
     bit<1> dpi_activated;
     bit<8> flow_is_new;
-    port_t ingress_port; // DPI, because cloning resets all metadata
+    port_t ingress_port; // because cloning resets all metadata
+                         // and the ingress port might be of interest in DPI
 
     //port knocking part
     bit<8> knock_id;
@@ -99,11 +99,13 @@ struct metadata {
 }
 
 struct headers {
+    // standard headers
     ethernet_t   ethernet;
     ipv4_t       ipv4;
     tcp_t        tcp;
     udp_t        udp;
 
+    // our headers
     controller_t controller;
     dpi_t        dpi;
 }
