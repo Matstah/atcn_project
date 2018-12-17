@@ -93,6 +93,7 @@ class Controller(object):
         if a.no_filter:
             self._clear_tables([FILTERS[k]['table'] for k in ALL_FILTERS])
         elif default:
+            self._clear_tables([FILTERS[k]['table'] for k in ALL_FILTERS])
             self.set_table_defaults()
             for f in ALL_FILTERS:
                  self._file_to_table(**FILTERS[f])
