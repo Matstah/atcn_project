@@ -10,45 +10,54 @@ This project conceptually shows how parts of a modern firewall can be implemente
 
 These instructions will get the network and firewall up and running.
 
+For convenience you can start the `open_terminals.sh` script in the _Project_ folder. This starts several _xterm_ windows. The **mininet is started automatically** in one of the windows!! The script asks you, if you want to start all controllers immediately (wait for until mininet is available) or if it just open a "reasonable (=5)" additional windows.
+
 ### Network
-The network we provide for testing our firewall looks the following:
+The network we provide for testing our firewall looks like the following. The firewall (red) is connected to the "internet" or _external network_ (blue) and an _internal network_ with hosts (green) and a server (yellow).
 
 <p align="center">
 <img src="images/topology.png" title="network topology">
 <p/>
 
-Being in the Project folder, we can use the following command to start mininet
+Being in the _Project_ folder, start mininet on your own with
+`sudo p4run`
+or use
+`./open_terminals.sh`
+and answer with **n**!
 
-```
-sudo p4run
-```
-Next use `pingall` to check for full connectivity. Now we can activate the firewall.
+Next use `pingall` to check for full connectivity. Now we can activate the firewall. (If you chose **y** above, `pingall` does not work as explained in the `Black and White Lists` section).
 
 ## Firewall
 
-A step by step description on the individual controller scripts to set up the firewall.
-* To start the controller scripts, one should be in Project/controller folder.
-* To start the testing scripts**, one should be in Project/testing folder.
-
+A step by step description on the individual controller scripts to set up the firewall. We assume that you changed to the corresponding folder when we present the commands, but the scripts should work from anywhere. (`open_terminals.sh` opens some windows in each folder!)
+* The controller scripts are in `Project/controller` folder.
+* The testing scripts, are in `Project/testing` folder.
 
 ### Stateful firewall
-The stateful firewall is completely implemented in p4. Therefore it runs since the start of mininet. All IP traffic not being UDP or TCP can pass, as this was not part of our focus. Therefore pingall shows full connectivity. When sending TCP and UDP, all ingress traffic should be blocked due to the stateful firewall being active. See firewall diagram for further informations. If a TCP/UDP packet is send from inside out, then the response will be allowed back in.
+The stateful firewall is completely implemented in p4. Therefore it runs since the start of mininet. All IP traffic not being UDP or TCP can pass, as this was not part of our focus. Therefore pingall shows full connectivity (as long as no filters are set). When sending TCP and UDP, all ingress traffic should be blocked due to the stateful firewall being active. See firewall diagram for further informations. If a TCP/UDP packet is sent from inside out, then the response will be allowed back in.
 
-### Black and White Lists
-This script sets up the Whitelist for TCP ports and Blacklists for IP adresses.
-To add new ports or IP addresses, use the *.txt* files in *filters* folder and restart controller.
-
-Set up black and white lists, type into CLI:
+Now lets activate all functionalities of the firewall with our default values.
 ```
 sudo python firewall_controller.py
 ```
+
+### Black and White Lists
+This script sets up the Whitelist for TCP ports and Blacklists for IP adresses.
+**NOTE**: To add new ports or IP addresses, use the *.txt* files in *filters* folder and either run the script again (and reset everything), or manually clear the corresponding list and load it again. Check the README of the controller folder for details and examples.
+
 **Test:** Use ping to verify that certain IP's are blocked, use:
 ```
 mininet> he1 ping hi2
 ```
-We block he1 on the blacklist for ingress and egress traffic.
+We block **he1** on the blacklist for ingress and egress traffic.
+But **he2** can ping:
+```
+mininet> he2 ping hi2
+```
 
 ### Port knocking
+TODO: continue here!....
+
 To enable port knocking, the controller script needs to be started by:
 
 ```
