@@ -12,7 +12,7 @@ from time import time
 import Dpi
 
 # KNOCKING
-SECRET_PORT = 3141 # TODO: do not hardcode
+SECRET_PORT = 3142 # TODO: do not hardcode
 
 # DPI
 DPI_FOLDER_NAME='dpi_log'

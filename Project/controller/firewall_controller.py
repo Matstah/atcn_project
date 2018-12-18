@@ -3,7 +3,7 @@ import struct
 from p4utils.utils.topology import Topology
 from p4utils.utils.sswitch_API import SimpleSwitchAPI
 from scapy.all import Ether, sniff, Packet, BitField
-from os import path
+from os import path, remove
 import traceback
 import time
 import sys
@@ -45,6 +45,12 @@ FILTERS = {
         'action': 'drop',
         'need_prio': True
     }
+}
+
+# other tables that are not filters, used for _clear_tables()
+TABLES = {
+    'knock': 'secret_entries',
+    'syndef': 'source_accepted'
 }
 
 # Register names
@@ -109,16 +115,31 @@ class Controller(object):
             self.set_register('dpi', 0, 0)
         elif default:
             self.set_register('dpi', 0, DPI_DEFAULT)
-        elif a.dpi_prob >= 0:
+        elif a.dpi_prob != -1:
             self.set_register('dpi', 0, a.dpi_prob)
 
         # Knocking
         if a.no_knock:
+            self._clear_tables([TABLES['knock']])
             self.set_table_knocking_rules([0], 0)
         elif default:
             self.set_table_knocking_rules(KNOCK_SEQUENCE_DEFAULT, a.knock_timeout*TIMEOUT_CONVERSION)
-        elif a.knock_sequence[0] > 0:
+        elif a.knock_sequence[0] != -1:
             self.set_table_knocking_rules(a.knock_sequence, a.knock_timeout*TIMEOUT_CONVERSION)
+
+        # Tables
+        if a.table_clear[0] != -1:
+            self._clear_tables([TABLES[t] for t in a.table_clear])
+
+            # also delete syndef file, where possible allowed entries are saved
+            if 'syndef' in a.table_clear:
+                file = self.script_path + '/table_files/source_accepted.pkl'
+                try:
+                    remove(file)
+                except:
+                    if path.isfile(file):
+                        print('Entries file not removed.. Do manually! File: ' + file)
+
     ### END OF do_things
 
     # Filters lists
@@ -203,6 +224,9 @@ if __name__ == "__main__":
     parser.add_argument('--no_filter', action='store_true', help='Deactive filling of tables with file values')
     parser.add_argument('--filter_clear', '-fc', nargs='+', default=[-1], help='clear specified filter from [wp,bs,bd]')
     parser.add_argument('--filter_set', '-fs', nargs='+', default=[-1], help='set only specified filter form [wp,bs,bd]')
+
+    # Tables
+    parser.add_argument('--table_clear', '-tc', nargs='+', default=[-1], help='clear tables that allow entries from [knock,syndef]')
 
     # get all options
     args = parser.parse_args()

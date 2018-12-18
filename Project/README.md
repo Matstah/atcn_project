@@ -55,25 +55,20 @@ But **he2** can ping:
 mininet> he2 ping hi2
 ```
 
+### Sniff & Heavy-Hitter controller
+Now we can start the two other controllers in two separate windows and keep them running.
+`heavy_hitter_controller.py` loops and resets the bloom counter for heavy (syn) hitter detection. We see it in action later.
+`sniff_controller.py` listens on the cpu_port `8` where the firewall will send clone packets. The controller will then perform some action according to the clone type.
+```
+sudo python heavy_hitter_controller.py
+sudo python sniff_controller.py
+```  
+
 ### Port knocking
-TODO: continue here!....
+The `firewall_controller` has set the **default values** for port knocking, that are also used for the test example. The defaults are: Knock sequence `100 101 102 103` with a timeout of `5` seconds between each knock. The secret port that opens is determined by the `sniff_controller` where it is hardcoded to `3142`.
 
-To enable port knocking, the controller script needs to be started by:
+The knock sequence gives all different knocking states to the firewall, such that the whole knocking state machine operates in p4. The firewall notifies the controller when someone knocks correctly, who will then set an entry on the **Secret List** to grant entrance trough the secret port.
 
-```
-sudo python port_knock_controller.py
-```
-or
-```
-sudo port_knock_controller.py -ps 100 101 102 103 -s 3143 -t 5000000
-```
-This command sets the defaults used for the test example.
-This script sets tells the firewall all different knocking states, such that the whole knocking state machine operates in p4.
-This script should be kept open during the knocking, because it will receive messages from the switch/firewall. These messages contain information for the switch to set an entry on the **Secret List** to grant entrance trough the secret port.
-To set a specific secret port, knocking sequence, max time between knocks, use:
-```
-sudo port_knock_controller.py -ps <knock sequence> -s <secret port> -t <max time between knocks>
-```
 **Test:** Open two port interfaces on the firewall, one on the internal side, one on the external. In example we send the knock sequence from he2 to hi2.
 ```
 mininet> xterm fir fir
@@ -91,23 +86,44 @@ Now we are able to inspect all traffic reaching the firewall from he2, and can s
 To activate the knock tester, go into the Project/testing folder and run:
 ```
 sudo python knock_seq_send.py --local --src he2 --dst hi2 -k 100 101 102 103 -s 3142
-sudo python knock_seq_send.py --local --src <srcName> --dst <dstName> -k <knock sequence> -s <secret port>
 ```
+**HINT**: the `--local` option is needed because we start the script not via a window reached from the `mininet` with `xterm <host>`. The testing scripts can this for us but we have to tell it. _Strange behavior_ can occur if this is not done!!
+
 With [100, 101, 102, 103] being the correct knocking sequence. The secret port is set within the script.
 This test file runs 3 test cases:
 
 * Send knock sequence with a timeout-> nothing should get trough firewall.
-* Send knock sequence including wrong knock-> nothing should get trough firewall. Then a correct one is send, and 1 tcp packet should be able to pass the firewall on the secret port 3141.
+* Send knock sequence including wrong knock-> nothing should get trough firewall. Then a correct one is send, and 1 tcp packet should be able to pass the firewall on the secret port 3142.
 * 3 knockers are trying to complete a correct knock, while the firewall is hammered with many different UDP packets. Each UDP packet creates a knock. When successful, 3 TCP packet from 3 different source ports should get trough the firewall.
 
 ### SYN flood defender
-The TCP cookie part to validate the source is completely implemented in P4 and works since the start of the switch. To grant access for validated source, the syndef_controller is setup.
-```
-sudo python syndef_controller.py
-```
+The TCP cookie part to validate the source is completely implemented in P4 and works since the start of the switch but it relies on the `sniff_controller` to set the entry for pass through of validated sources.
 This controller also takes care of accepted sources that become heavy SYN hitters. The controller will get a notice from the switch, remove these sources from the access list, and blacklists them.
 
 **Test:**
+Make sure that the `heavy_hitter_controller` is still running and prints the green 'X's and the `sniff_controller` is still required as well.
+We want to inspect some interfaces
+```
+mininet> xterm he3 fir ser
+tcpdump -enn -i he3-eth0
+tcpdump -enn -i fir-eth2
+tcpdump -enn -i ser-eth0
+```
+
+You need three different testing scripts. Execute them in the following order:
+1. `sudo python server.py --local --debug` will connect and start on the server `ser` and wait for a first SYN packet to respond to a TCP handshake. For that to be possible a client (here: he3 with IP: 10.0.3.1) has to validate himself first.
+2. `sudo python syn_flood.py --local` will connect to **he2** and will loop through the subnet 10.0.3.x of **he3**, hence **he2 is spoofing and syn-flooding** our network. We see this on the interfaces we started on he3 and fir. On `fir` we see the SYNs [S] from all the spoofed addresses and towards `he3` we see the SYNACKs [S.] sent from the firewall to the he3 subnet.
+3. `sudo python client.py --local --debug --src he3 -p 5` tries to connect to the server with a TCP handshake. The packets are hard to see in all the noise, but the client script will print what it sees.
+First, it will send a SYN and get a SYNACK from the firwall. It replies with an ACK, but the firewall responds with a RST to indicate it has to try again. In the mean time, we see that the `sniff_controller` received a cloned packet and sets 10.0.3.1 for dst 10.0.4.4 (=ser) on the _source accepted_ table.
+Second, another handshake is started by the client which will now reach the server, the server completes the handshake and the client will send 5 data packets that are printed by the server. After a while the server will timeout and stop.
+_Note_, that we now see an occasional spoofed packet by the syn-flooder because it sends a valid combination: 10.0.3.1 with TCP-dport 80.
+4. Now we want to test the revocation of the source validation. Restart the server in the **bad** mode, which still completes a handshake, but then only listens and prints any SYN packet it receives.
+`sudo python server.py --local --debug --bad`
+Start the client in its **bad** mode, where it performs a handshake again, but once it is successful, it will only send SYN packets.
+`sudo python client.py --local --debug --src he3 --bad -p 100`
+_Note_, that you might restart the scripts because the syn-flooder starts the handshake with the server. You could stop the syn-flooder for this part.
+We see that some SYN packets get through to the server (interface and script) but the firewall detects it and informs the `sniff_controller` to remove the valid entry and blacklist this client.
+5. If you like, you can now redo step 3 without success, because the be blacklisted 10.0.3.1.
 
 
 ##Deep Packet inspection

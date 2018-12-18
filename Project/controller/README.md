@@ -48,6 +48,9 @@ Help:
   wp = 'whitelist_tcp_dst_port'
   bs = 'blacklist_src_ip'
   bd = 'blacklist_dst_ip'
+
+--table_clear    | -tc TABLE_CLEAR [TABLE_CLEAR ...]
+  clear tables that allow entries from [knock,syndef]
 ```
 Examples (only arguments shown, with explanation):
 ```
@@ -55,9 +58,10 @@ Examples (only arguments shown, with explanation):
 -dp 50                     set dpi probability to 50%
 -ks 100 50 150 300 -kt 3   define new knock sequence with timeout of 3 seconds
 -fc bs bd                  clear the two blacklist tables
--fc bs -fs bs              reset blacklist: 1. clear, 2. fill with default from file
+-fc bs -fs bs              reset blacklist to default: 1. clear, 2. fill with file
                            e.g. good to test synflood mechanism again from same
                            source because validation is not possible if blacklisted
+-tc knock                  remove all successful knockers
 -fs wp -fc bs -dp 70       change multiple things at once
 ```
 Our default values:
@@ -104,7 +108,7 @@ dpi_10.0.4.4and10.0.3.1-flow473_num1
  ```
 
 **Knocking**:
-This script also sets the *secret port*, which will be opened to a specific source once a correct knocking sequence has been recorded (see 2.). The secret port is _hardcoded_ to `3141`. If you want to change it, you can adapt the script at the beginning and restart the controller.
+This script also sets the *secret port*, which will be opened to a specific source once a correct knocking sequence has been recorded (see 2.). The secret port is _hardcoded_ to `3142`. If you want to change it, you can adapt the script at the beginning and restart the controller.
 
 **Source Validation**:
 1. Grant access packet: The appropriate table entry gets written which returns an ID that is saved in a dictionary.
