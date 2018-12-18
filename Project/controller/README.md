@@ -34,7 +34,7 @@ Help:
   define port knocking sequence
 
 --knock_timeout  | -kt KNOCK_TIMEOUT
-  set timeout [s] between knocks
+  set timeout [s] between knocks !Only works with a new sequence -ks!
 
 --no_filter
   Clear all filter tables
@@ -69,7 +69,8 @@ Our default values:
 dpi_prob:           100%
 knock_sequence:     100 101 102 103
 knock_timeout:      5 seconds
-filter:             set all filters
+knock secret port:  3142 [!set by sniff controller!]
+filter:             set all filters [see section Filters below]
 ```
 
 ##### Filters: Black- and Whitelists:
@@ -83,7 +84,6 @@ The *firewall_controller* sets up a port knocking tracker on the switch via tabl
 
 All UDP traffic, that can not pass the stateful firewall will be dropped by the firewall, independently of these settings.
 
-
 ## sniff_controller.py
 Simply use with:
 ```
@@ -95,7 +95,7 @@ This controller sniffs all cloned packets from the firewall and only stops if th
 3. A source got validated by the SYN-flood defense mechanism. The controller has to grant access for this source.
 4. If a validated source as above in 3. gets malicious (SYN-flooding as detected by heavy hitter detector), the address must be removed from validation list and gets blacklisted from now on.
 
-**DPI**:
+**1. DPI**:
 DPI packets get written to files in the following format in the subdirectory `./dpi_log` (which is created if it does not exit):
 ```
 dpi_<ip1>and<ip2>-flow<id>_num<count>
@@ -107,10 +107,10 @@ dpi_10.0.4.4and10.0.3.1-flow473_num1
  tail -f dpi_log/dpi_10.0.4.4and10.0.3.1-flow473_num1
  ```
 
-**Knocking**:
+**2. Knocking**:
 This script also sets the *secret port*, which will be opened to a specific source once a correct knocking sequence has been recorded (see 2.). The secret port is _hardcoded_ to `3142`. If you want to change it, you can adapt the script at the beginning and restart the controller.
 
-**Source Validation**:
+**3. / 4. Source Validation**:
 1. Grant access packet: The appropriate table entry gets written which returns an ID that is saved in a dictionary.
 2. Revoke access packet: The validation of a client has to be revoked, so the controller deletes the entry in the table from 1. with the saved ID. Additionally, the client gets blacklisted.
 

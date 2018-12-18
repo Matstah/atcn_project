@@ -1,4 +1,6 @@
 # File Organization
+The main README is `Project/README.md` where you can test the project immediately and get a lot of information as well.
+
 <pre>
 **reduced view**
 ├── Project
@@ -20,6 +22,8 @@ See comments enclosed in \*.
 │   └── ge3-commands.txt
 
 ├── controller                            *three main controllers*
+|   ├── legacy/*                          *legacy controllers when all functions
+                                            were separate*
 │   ├── Dpi.py                            *helper for sniff_controller*
 │   ├── firewall_controller.py            *sets actions, register values, etc*
 │   ├── heavy_hitter_controller.py        *runs loop to reset heavy hitter filter*
@@ -33,7 +37,7 @@ See comments enclosed in \*.
                                           here*
 
 ├── filters                               *files read by firewall_controller
-│   ├── ext2in_blacklist_srcIP.txt        and sets table entries i firewall*
+│   ├── ext2in_blacklist_srcIP.txt        and sets table entries in firewall*
 │   ├── ext2in_whitelist_tcp_dst_ports.txt
 │   └── in2ext_blacklist_dstIP.txt
 
@@ -53,7 +57,7 @@ See comments enclosed in \*.
 │   ├── firewall.p4                       *basic file that "includes" the others*
 │   ├── include
 │   │   ├── definitions.p4
-│   │   ├── headers.p4
+│   │   ├── headers.p4                    *ALL CODE IS HEAVILY COMMENTED*
 │   │   └── parsers.p4
 │   └── ingress
 │       ├── apply.p4

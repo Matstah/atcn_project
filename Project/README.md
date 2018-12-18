@@ -179,6 +179,9 @@ Execute `sudo python send.py --local --i2e --dst he3 --src hi1` several times an
 You should notice that only some flows will be started to be inspected and some are not because we lowered the probability.
 This can be seen in the `sniff_controller` output and the fewer files generated in the `dpi_log` folder.
 
+## Finish
+These were all tests that show the functionalities of our firewall in `p4`. For even more details head over to `controller/README` and `testing/README` to get more descriptions of what all the scripts can do.
+
 ## Authors
 
 * **Manuel Pulfer**
