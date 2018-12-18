@@ -19,6 +19,18 @@ SYNACK_FLAG=0x12
 FIN_FLAG=1
 FINACK_FLAG=0x10
 
+# COLORS for nicer printing
+def red(str):
+    return _col(str, 91)
+def green(str):
+    return _col(str, 92)
+def yellow(str):
+    return _col(str, 93)
+def blue(str):
+    return _col(str, 94)
+def _col(s, code):
+    return '\033[{}m'.format(code) + str(s) + '\033[0m'
+
 # HELPER
 def get_interface():
     iface=None
@@ -109,14 +121,21 @@ class Server():
         if self.client_is_bad:
             # finish handshake
             data_pkt = srp1(answer, timeout=3, verbose=0)
-            log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(data_pkt), data_pkt.ack, data_pkt.seq))
+            try:
+                log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(data_pkt), data_pkt.ack, data_pkt.seq))
+            except Exception:
+                print(red('TIMED OUT AFTER SENDING **SYNACK**. THERE WAS NO RESPONSE!\n'
+                + 'Maybe the client has a problem?\n'
+                + '(or did you terminate the script?:) )'))
+                exit(1)
             seq = seq + 1
             tcp = data_pkt.getlayer(TCP)
             ACK = TCP(sport=sport, dport=dport, flags = 'A', seq=seq, ack=(tcp.seq+1))
             answer = self.flows[id] / ACK
             sendp(answer, verbose=0)
-            log.debug('Just listen now...')
+            log.debug('Just listen now... You will have to terminate yourself!')
             sniff(iface=self.interface, prn=lambda x: self.listen_to_syns(x))
+        # ack all data here and print payload
         else:
             while True:
                 log.debug('SEND {} with ack={}, seq={}'.format(tcp_flags(answer), answer.ack, answer.seq))

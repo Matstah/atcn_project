@@ -123,9 +123,9 @@ _Note_, that we now see an occasional spoofed packet by the syn-flooder because 
 `sudo python server.py --local --debug --bad`
 Start the client in its **bad** mode, where it performs a handshake again, but once it is successful, it will only send SYN packets.
 `sudo python client.py --local --debug --src he3 --bad -p 100`
-_Note_, that you might restart the scripts because the syn-flooder starts the handshake with the server. You could stop the syn-flooder for this part.
+**Note!!**, that you might _have restart_ the scripts because the syn-flooder starts the handshake with the server before the client does and the server sends a SYNACK the client does not expect. **Therefore, you probably should stop the syn-flooder for this part!!!** (because the testing scripts are not super robust...)
 We see that some SYN packets get through to the server (interface and script) but the firewall detects it and informs the `sniff_controller` to remove the valid entry and blacklist this client.
-5. If you like, you can now redo step 3 without success, because the be blacklisted 10.0.3.1.
+5. If you like, you can now retry step 3 **WITHOUT success**, because 10.0.3.1 is blacklisted now and cannot verify itself anymore with a full handshake.
 
 ## Some Cleanup
 [**Note**: If you want to skip this, just stop the mininet and close all winows. Restart with `Project/open_terminals.sh` and answer **y** this time, which restarts everything.]

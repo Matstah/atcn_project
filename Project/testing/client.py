@@ -18,6 +18,18 @@ SYNACK_FLAG=0x12
 FIN_FLAG=1
 FINACK_FLAG=0x10
 
+# COLORS for nicer printing
+def red(str):
+    return _col(str, 91)
+def green(str):
+    return _col(str, 92)
+def yellow(str):
+    return _col(str, 93)
+def blue(str):
+    return _col(str, 94)
+def _col(s, code):
+    return '\033[{}m'.format(code) + str(s) + '\033[0m'
+
 def get_if():
     ifs=get_if_list()
     iface=None # "h1-eth0"
@@ -64,17 +76,34 @@ def handshake_part1(eth, ip, sport, dport, seq):
     pkt = eth/ip/SYN
     log.debug('SEND {} with ack={}, seq={}'.format(tcp_flags(pkt), pkt.ack, pkt.seq))
     SYNACK=srp1(pkt, verbose=0, timeout=3) # sends packet and waits for corresponding response
-    log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(SYNACK), SYNACK.ack, SYNACK.seq))
+    try:
+        log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(SYNACK), SYNACK.ack, SYNACK.seq))
+    except Exception:
+        print(red('WAITING FOR **SYNACK** TIMED OUT. TRY AGAIN...\n(PS: is server.py running? or restart server.py as well!)'))
+        exit(1)
     seq = seq + 1
     # log.debug('Is new seq == other.ack? ' + str(seq == SYNACK.ack))
     ACK=TCP(sport=sport, dport=dport, flags="A", seq=seq, ack=(SYNACK.seq+1))
     return [ACK, seq]
 
+# not truly the second part of the handshake... Now we could send data already according
+# to 'normal' TCP, but we check first if firewall might not reset the connection and
+# send therefore another ACK. If we get an ACK again, it was from the server, else
+# try again (then now the firewall has hopefully allowed us to access server)
 def handshake_part2(eth, ip, sport, dport, ACK, seq):
     pkt = eth/ip/ACK
     log.debug('SEND {} with ack={}, seq={}'.format(tcp_flags(pkt), pkt.ack, pkt.seq))
     response = srp1(pkt, verbose=0, timeout=3)
-    log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(response), response.ack, response.seq))
+    try:
+        log.debug('GOT {} with ack={}, seq={}'.format(tcp_flags(response), response.ack, response.seq))
+    except Exception:
+        print(red('WAITING FOR **ACK** TIMED OUT. WE EXPECT THIS TO COME FROM THE SERVER HERE!\n'
+            + 'Is the server running in the appropriate state? Maybe restart server first and then this again!\n'
+            + 'ALSO: if the client is validated from the server, the synflooder might interfere with this test,\n'
+            + 'because he spoofs this address the server will SYNACK the wrong packet, that this script does '
+            + 'not understand. So maybe disable the synflooder or adapt variable START_IP there and '
+            + 'change from 0 to 2...'))
+        exit(1)
     type = tcp_flags(response)
     if type == 'ACK':
         seq = seq + 1
@@ -116,7 +145,10 @@ def client_tcp_start(src, dst, packets, sleep, i_am_bad):
         time.sleep(sleepy_time)
         ACK, seq, connection_established = handshake_part2(eth, ip, sport, dport, ACK, seq)
         log.debug('Connection established? ' + str(connection_established))
-        time.sleep(2.0)
+        if not connection_established:
+            print(green('Connection not yet established, because did not get ACK after my ACK of SYNACK.\n'
+                + 'Firewall has probably sent RST. So let\'s try again with a new handshake!'))
+        time.sleep(2.0) # sleep a little before next try or continuation
 
     # send data or only SYNs
     if i_am_bad:
