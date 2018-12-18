@@ -40,6 +40,7 @@ action hash_intern_udp_packet() {
         (bit<16>)1024);
 }
 
+// switched src & dst address and port for traffic from outside
 action hash_extern_tcp_packet() {
     hash(meta.flow_id,
         HashAlgorithm.crc16,
