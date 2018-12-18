@@ -57,7 +57,7 @@ Examples (only arguments shown, with explanation):
 --no_dpi                   deactivate dpi
 -dp 50                     set dpi probability to 50%
 -ks 100 50 150 300 -kt 3   define new knock sequence with timeout of 3 seconds
--fc bs bd                  clear the two blacklist tables
+-fc bs bd                  clear the two blacklist tables (NOTHING blacklisted then)
 -fc bs -fs bs              reset blacklist to default: 1. clear, 2. fill with file
                            e.g. good to test synflood mechanism again from same
                            source because validation is not possible if blacklisted

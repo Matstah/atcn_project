@@ -1,4 +1,6 @@
 # Advanced Stateful Firewall using P4
+**You can read through this section to get information about all features and directly test and investiga them**
+
 
 This project conceptually shows how parts of a modern firewall can be implemented in hardware by using p4. Firewalls are essential components to provide access control to a network. Today's "next-generation" firewalls provide enhanced protection by combining information from multiple layers. However, such tasks are usually implemented in the control plane and massively degrade the network throughput. By using p4, we implemented a stateful firewall, extended with SYN-flood attack prevention, deep packet inspection, port knocking, and white-/ blacklists. We showed that parts of a firewall controller can be moved to the hardware and could therefore run at the speed of modern switches.
 
@@ -125,11 +127,57 @@ _Note_, that you might restart the scripts because the syn-flooder starts the ha
 We see that some SYN packets get through to the server (interface and script) but the firewall detects it and informs the `sniff_controller` to remove the valid entry and blacklist this client.
 5. If you like, you can now redo step 3 without success, because the be blacklisted 10.0.3.1.
 
+## Some Cleanup
+[**Note**: If you want to skip this, just stop the mininet and close all winows. Restart with `Project/open_terminals.sh` and answer **y** this time, which restarts everything.]
 
-##Deep Packet inspection
+Let's clean some stuff up to demonstrate some things of the `firewall_controller` and get a more manageable amount of windows.
+- Stop the `heavy_hitter_controller` and close the window.
+- Close the interface windows from the syn flood tests.
+- Stop 'syn_flood.py' and close the window if you have not already.
+- Terminate `server.py` if it is still listening to SYNs.
 
+Now, you should have something like two testing windows, the miniet and the `sniff_controller` running. Get yourself also a window in the `Project/controller` folder, where we first perform some `firewall_controller` commands.
+**ATTENTION**: If you run the script without any arguments, the default actions will run again, what we do not want for this demonstration.
 
+- Clean the blacklist (removing malicious _he3_ from the syn-flood test) and reset to the default values from the file "Project/filters/ext2in_blacklist_srcIP.txt" which blacklists _he1_ and our internal addresses as these should not get to us from the outside:
+`sudo python firewall_controller.py -fc bs -fs bs`
+- Remove the successful knockers from the port knocking tests:
+`sudo python firewall_controller.py -tc knock`
+- Deactivate DPI
+`sudo python firewall_controller.py --no_dpi`
 
+Continue with the next section: DPI
+## Deep Packet inspection
+##### Preparations
+The firewall choses some _internally_ started flows to inspect further by sending the whole packets to the `sniff_controller` who logs the flows in files. Let's activate dpi with probability of 100% to inspect every (internal) flow.
+`sudo python firewall_controller.py -dp 100`
+
+Verify that there is the folder `controller/dpi_log` and change to it `cd controller/dpi_log`. If it is not, restart the `sniff_controller` which will create it. Remove all the files in the folder if there were any present to make the next points in the tests below clearer.
+
+In separate testing windows _prepare_ the following commands:
+A) `sudo python send.py --local --src hi2 --dst he2 --i2e` Note, the important _i2e_ option (depending on this the script sets the sport and dport, also required for the flow id)!
+B) `sudo python send.py --local --src he2 --dst hi2`
+
+##### Tests
+We simulate traffic between these two **hi2** and **he2** by hand.
+- Execute **A** and check that the sniff controller sees the DPI clone.
+List the files in the `dpi_log` folder.
+`cat` the file and check the contents.
+This single packet should be visible with a little payload.
+- The above probably took you long enough such that flow timed out at the firewall :).
+Execute **B**. No packet is logged, because the firewall thinks a new flow wants to be established from the outside (what our "statefulness" does not appreciate).
+[If you were fast enough, the behavior of the next step should be visible.]
+- Execute **A** again and **B** shortly after.
+Now both packets get sent to the controller, because 'A' starts a new flow, which then is also recognized in the other direction.
+This is also visible in the second file that got created, that now contains two packets.
+- The same thing can be done with _UDP_.
+For example extend both commands with `--udp -p 100` and execute them shortly after another (extended A first).
+Run `ll` in the `dpi_log` folder and notice that the udp file is much larger and the flow id in the filename is different, because we differentiate TCP and UDP flows.
+- Lower the probability for inspection with `sudo python ../firewall_controller.py -dp 20`.
+Optionally remove all the dpi logs `rm dpi*`.
+Execute `sudo python send.py --local --i2e --dst he3 --src hi1` several times and always change the last number of the src hiX through 1 to 3 and sometimes add --udp if you want.
+You should notice that only some flows will be started to be inspected and some are not because we lowered the probability.
+This can be seen in the `sniff_controller` output and the fewer files generated in the `dpi_log` folder.
 
 ## Authors
 
