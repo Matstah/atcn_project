@@ -20,8 +20,6 @@ if (
 
                 // Is the source validated? (from syndef mechanism)
                 if(source_accepted.apply().hit){
-                    //TODO mstaehli: source port checked for heavy hitting
-
                     // Count syn packets to verify that valid source performs
                     //   no syn flood attack
                     if(hdr.tcp.syn == 1 && hdr.tcp.ack != 1){
@@ -62,11 +60,9 @@ if (
                         // if there is a hit, NoAction is applied,
                         // else the action is drop!
                         if(!whitelist_tcp_dst_port.apply().hit){
-                            // packet not ok because not on our whitelist
-                            // we do net get here, because on 'not hit' the pkt
-                            // is dropped // TODO: correct statement? is the return then needed?
+                            // white list miss, threfore packet should be dropped
+                            drop();
                             return;
-                            //next: check ip on src blacklist // TODO: is this missing???
                         }
                     }
 
@@ -92,7 +88,7 @@ if (
                             return;
                         }
 
-                        // flow is ok!
+                        // No timeout, flow is ok!
                         else {
                             time_stamps.write(meta.flow_id, standard_metadata.ingress_global_timestamp + (bit<48>)TIMEOUT_TCP);
                             meta.accept = 1;
@@ -173,7 +169,7 @@ if (
                     }
                     // END of port knocker
 
-                    // STATEFUL FIREWALL
+                    // STATEFUL FIREWALL UDP
                     // hash packet values to recognize flow
                     hash_extern_udp_packet();
                     known_flows.read(meta.flow_is_known, meta.flow_id);
@@ -234,10 +230,10 @@ if (
                 // --> let it access our server.
                 if(hdr.tcp.isValid()){
 
-                    //SYN COOKIES SYN-DEFENSE
+                    //SYN COOKIES for SYN-DEFENSE
                     if(hdr.tcp.syn == 1){
-                        //Debugging: test clone to check number
-                        //clone3(CloneType.I2E, 100, meta);
+                        //TODO:Debugging: test clone to check number
+                        //TODO:clone3(CloneType.I2E, 100, meta);
 
                         // Perform handshake with client
                         set_cookie_in_ack_number();
@@ -249,7 +245,7 @@ if (
                         compute_cookie_hash();
                         bit<32> ack = hdr.tcp.ackNo-1;
 
-                        //source is valid- not spoofed..
+                        //source is valid-> not spoofed..
                         // tell controller to put grand access
                         // reply with RST = 1: client has to start another
                         // handshake, which will then be done with server
@@ -259,7 +255,7 @@ if (
                             reply_rst();
                         }
 
-                        //we received some ack that is not okey.. or has timed out.
+                        //we received some ack that is not a proper reply.. or has timed out.
                         else{
                             reply_rst();
                         }

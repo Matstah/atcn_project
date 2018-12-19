@@ -1,5 +1,5 @@
 # Advanced Stateful Firewall using P4
-**You can read through this section to get information about all features and directly test and investiga them**
+**You can read through this section to get information about all features and directly test and investigate them**
 
 
 This project conceptually shows how parts of a modern firewall can be implemented in hardware by using p4. Firewalls are essential components to provide access control to a network. Today's "next-generation" firewalls provide enhanced protection by combining information from multiple layers. However, such tasks are usually implemented in the control plane and massively degrade the network throughput. By using p4, we implemented a stateful firewall, extended with SYN-flood attack prevention, deep packet inspection, port knocking, and white-/ blacklists. We showed that parts of a firewall controller can be moved to the hardware and could therefore run at the speed of modern switches.
@@ -12,10 +12,10 @@ This project conceptually shows how parts of a modern firewall can be implemente
 
 These instructions will get the network and firewall up and running.
 
-For convenience you can start the `open_terminals.sh` script in the _Project_ folder. This starts several _xterm_ windows. The **mininet is started automatically** in one of the windows!! The script asks you, if you want to start all controllers immediately (wait for until mininet is available) or if it just open a "reasonable (=5)" additional windows.
+For convenience you can start the `open_terminals.sh` script in the _Project_ folder. This starts several _xterm_ windows. The **mininet is started automatically** in one of the windows!! The script asks you, if you want to start all controllers immediately (wait until mininet setup has completed) or if it should open "reasonable (=5)" additional CLI windows.
 
 ### Network
-The network we provide for testing our firewall looks like the following. The firewall (red) is connected to the "internet" or _external network_ (blue) and an _internal network_ with hosts (green) and a server (yellow).
+The network we provide for testing our firewall looks like the following: The firewall (red) is connected to the "internet" or _external network_ (blue) and an _internal network_ with hosts (green) and a server (yellow).
 
 <p align="center">
 <img src="images/topology.png" title="network topology">
@@ -36,14 +36,13 @@ A step by step description on the individual controller scripts to set up the fi
 * The testing scripts, are in `Project/testing` folder.
 
 ### Stateful firewall
-The stateful firewall is completely implemented in p4. Therefore it runs since the start of mininet. All IP traffic not being UDP or TCP can pass, as this was not part of our focus. Therefore pingall shows full connectivity (as long as no filters are set). When sending TCP and UDP, all ingress traffic should be blocked due to the stateful firewall being active. See firewall diagram for further informations. If a TCP/UDP packet is sent from inside out, then the response will be allowed back in.
+The stateful firewall is completely implemented in p4. Therefore it runs since the start of mininet. All IP traffic not being UDP or TCP can pass, as this was not part of our focus. Pingall shows full connectivity (as long as no filters are set). When sending TCP and UDP, all ingress traffic should be blocked due to the stateful firewall being active. See firewall diagram for further informations. If a TCP/UDP packet is sent from inside out, then the response will be allowed back in.
 
+### Black and White Lists
 Now lets activate all functionalities of the firewall with our default values.
 ```
 sudo python firewall_controller.py
 ```
-
-### Black and White Lists
 This script sets up the Whitelist for TCP ports and Blacklists for IP adresses.
 **NOTE**: To add new ports or IP addresses, use the *.txt* files in *filters* folder and either run the script again (and reset everything), or manually clear the corresponding list and load it again. Check the README of the controller folder for details and examples.
 
@@ -69,7 +68,7 @@ sudo python sniff_controller.py
 ### Port knocking
 The `firewall_controller` has set the **default values** for port knocking, that are also used for the test example. The defaults are: Knock sequence `100 101 102 103` with a timeout of `5` seconds between each knock. The secret port that opens is determined by the `sniff_controller` where it is hardcoded to `3142`.
 
-The knock sequence gives all different knocking states to the firewall, such that the whole knocking state machine operates in p4. The firewall notifies the controller when someone knocks correctly, who will then set an entry on the **Secret List** to grant entrance trough the secret port.
+The knock sequence gives all different knocking states to the firewall, such that the whole knocking state machine operates in p4. The firewall notifies the controller when it has received a correct knocking sequence, who will then set an entry on the **Secret List** to grant entrance trough the secret port.
 
 **Test:** Open two port interfaces on the firewall, one on the internal side, one on the external. In example we send the knock sequence from he2 to hi2.
 ```
@@ -89,7 +88,7 @@ To activate the knock tester, go into the Project/testing folder and run:
 ```
 sudo python knock_seq_send.py --local --src he2 --dst hi2 -k 100 101 102 103 -s 3142
 ```
-**HINT**: the `--local` option is needed because we start the script not via a window reached from the `mininet` with `xterm <host>`. The testing scripts can this for us but we have to tell it. _Strange behavior_ can occur if this is not done!!
+**HINT**: the `--local` option is needed because we start the script not via a window reached from the `mininet` with `xterm <host>`. The testing scripts does this for us but we have to tell it. _Strange behavior_ can occur if this is not done!!
 
 With [100, 101, 102, 103] being the correct knocking sequence. The secret port is set within the script.
 This test file runs 3 test cases:
@@ -123,7 +122,7 @@ _Note_, that we now see an occasional spoofed packet by the syn-flooder because 
 `sudo python server.py --local --debug --bad`
 Start the client in its **bad** mode, where it performs a handshake again, but once it is successful, it will only send SYN packets.
 `sudo python client.py --local --debug --src he3 --bad -p 100`
-**Note!!**, that you might _have restart_ the scripts because the syn-flooder starts the handshake with the server before the client does and the server sends a SYNACK the client does not expect. **Therefore, you probably should stop the syn-flooder for this part!!!** (because the testing scripts are not super robust...)
+**Note!!**, that you might _have to restart_ the scripts because the syn-flooder starts the handshake with the server before the client does and the server sends a SYNACK the client does not expect. **Therefore, you probably should stop the syn-flooder for this part!!!** (because the testing scripts are not super robust...)
 We see that some SYN packets get through to the server (interface and script) but the firewall detects it and informs the `sniff_controller` to remove the valid entry and blacklist this client.
 5. If you like, you can now retry step 3 **WITHOUT success**, because 10.0.3.1 is blacklisted now and cannot verify itself anymore with a full handshake.
 

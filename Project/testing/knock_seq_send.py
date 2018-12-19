@@ -203,7 +203,7 @@ if __name__ == "__main__":
     # args for actual functionality
     parser.add_argument('-d', '--dst',     type=str, required=True, help='Destination NAME or IPv4')
     parser.add_argument('-k','--knock_seq', default = [], required=False, nargs ='+', help='dst ports to knock on')
-    parser.add_argument('-s', '--secret_port', type=int ,default = 3141, required=False, help='set secret port used to send tcp traffic')
+    parser.add_argument('-s', '--secret_port', type=int ,default = 3142, required=False, help='set secret port used to send tcp traffic')
     #parser.add_argument('--sleep', type=float, required=False, default=0.0, help='Sleep time between packets')
     parser.add_argument('--show', action='store_true', required=False, help='If set, all sent packets are printed')
 
