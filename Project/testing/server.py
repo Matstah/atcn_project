@@ -43,16 +43,17 @@ def get_interface():
         exit(1)
     return iface
 
-# copied (and modified) from: https://gist.github.com/tintinweb/8523a9a43a2fb61a6770 handle_recv
+# copied (and modified for our purpose)
+# from: https://gist.github.com/tintinweb/8523a9a43a2fb61a6770 handle_recv
 def tcp_flags(pkt):
     if pkt and pkt.haslayer(IP) and pkt.haslayer(TCP):
         if pkt[TCP].flags & 2 != 0:
-            return 'SYN' # TODO: ???
+            return 'SYN'
         elif pkt[TCP].flags & 0x3f == 0x12:   # SYN+ACK
             # log.debug("RCV: SYN+ACK")
             return 'SYNACK'
         elif pkt[TCP].flags & 16 != 0:      # ACK
-            return 'ACK' # TODO: ????
+            return 'ACK'
         elif  pkt[TCP].flags & 4 != 0:      # RST
             # log.debug("RCV: RST")
             return 'RST'

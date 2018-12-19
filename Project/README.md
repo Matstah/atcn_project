@@ -12,7 +12,7 @@ This project conceptually shows how parts of a modern firewall can be implemente
 
 These instructions will get the network and firewall up and running.
 
-For convenience you can start the `open_terminals.sh` script in the _Project_ folder. This starts several _xterm_ windows. The **mininet is started automatically** in one of the windows!! The script asks you, if you want to start all controllers immediately (wait until mininet setup has completed) or if it should open "reasonable (=5)" additional CLI windows.
+For convenience you can start the `./open_terminals.sh` script in the _Project_ folder. This starts several _xterm_ windows. The **mininet is started automatically** in one of the windows!! The script asks you, if you want to start all controllers immediately (wait until mininet setup has completed) or if it should open "reasonable (=5)" additional CLI windows.
 
 ### Network
 The network we provide for testing our firewall looks like the following: The firewall (red) is connected to the "internet" or _external network_ (blue) and an _internal network_ with hosts (green) and a server (yellow).

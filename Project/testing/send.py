@@ -87,14 +87,14 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--dst',     type=str, required=True, help='Destination NAME or IPv4')
     parser.add_argument('-p', '--packets', type=int, required=False, default=1, help='Number of packets')
     parser.add_argument('-u', '--udp', action='store_true', required=False, help='If protocol should be UDP instead of TCP')
-    #TODO parser.add_argument('--receive', action='store_true', required='False', help='Trigger receive terminals to open directly [only from local]')
     parser.add_argument('--sleep', type=float, required=False, default=0.0, help='Sleep time between packets')
     parser.add_argument('--show', action='store_true', required=False, help='If set, all sent packets are printed')
 
     # other args
     parser.add_argument('--debug', action='store_true', required=False, help='Activate debug messages')
 
-    parser.add_argument('--i2e', action='store_true', required=False)
+    parser.add_argument('--i2e', action='store_true', required=False, help='If set: sport=101, dport=105, otherwise the opposite.'
+                        + '[simultate flow between external and internal host]')
 
     # parse arguments
     args = parser.parse_args()

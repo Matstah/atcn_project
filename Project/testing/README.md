@@ -1,6 +1,10 @@
 # Testing
 **It is probably the easiest to simply go through the detailed description in the README in the Project folder!!!**
-These sections were written at earlier stages, but still contains some information about how the scripts behave.
+These sections were written at earlier stages, but still contains some information about how the scripts behave and you can use it for reference for further testing.
+
+**Important to know: When and when not to use the _--local_ option!!**
+You can run the scripts from a normal command line with the `--local` option. The script then "connects" to the host (either given by `--src` or `--host` depending on the script) and calls  the script there again.
+If you get a terminal with the host via mininet and `xterm <host>`, you should **omit** the `--local` option!
 
 ## Prepare Everything
 Execute `open_terminals.sh` in the _Project_ folder and follow the dialog (only answer when mininet has started) to get a fast access to test everything.

@@ -27,7 +27,7 @@ COMPONENT_TO_PARAMS = {
     'external_hosts': {
         'x': -3,
         'shape': 's',
-        'color': 'b',
+        'color': 'c',
         'size': STANDARD_NODE_SIZE*HOST_NODE_SIZE_FACTOR
     },
     'internal_hosts': {
@@ -39,7 +39,7 @@ COMPONENT_TO_PARAMS = {
     'external_gateways': {
         'x': -2,
         'shape': 'd',
-        'color': 'b',
+        'color': 'c',
         'size': STANDARD_NODE_SIZE*SWITCH_NODE_SIZE_FACTOR
     },
     'internal_gateways' : {

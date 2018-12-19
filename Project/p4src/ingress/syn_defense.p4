@@ -2,7 +2,6 @@ action compute_cookie_hash(){
     // ack-1== meta.syn_hash.. then we got the thing back within 10 seconds.
     // cut of 1'000'000'000'000'000'000'000'000 bits 16mio 25 digits: it is like division by 2 power of 25..=16mio=16seconds slot..
     meta.syn_timestamp = standard_metadata.ingress_global_timestamp >> 24;
-    //TODO: bit slicing might be way better!
 
     hash(meta.syn_hash,
         HashAlgorithm.crc32,
@@ -19,12 +18,11 @@ action set_cookie_in_ack_number(){
     //seqNo = 32 bit
     //timestamp %10 000 000: 10 seconds time to get same hash when comming back.
     compute_cookie_hash();
-    //bit<32> hans = hdr.tcp.seqNo;
+
     hdr.tcp.ackNo = hdr.tcp.seqNo + 1; //tells the next i want
     hdr.tcp.seqNo = meta.syn_hash;
     hdr.tcp.ack = 1; //now syn and ack valid--> syn/ack
     hdr.ipv4.ttl = 64;
-    //TODO: checksum for ipv4 and tcp
 }
 
 

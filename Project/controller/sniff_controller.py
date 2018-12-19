@@ -231,7 +231,8 @@ class Controller(object):
             text = text + pkt.show(dump=True) + '\n'
             try:
                 dpi = DpiHeader(rest)
-                print(blue(dpi.show(dump=True))) # TODO comment
+                # print the dpi header, then log everything
+                print(blue(dpi.show(dump=True)))
                 dpi_dict = Dpi.parse(dpi)
                 text = '{t}{c}{b}{l}{b}'.format(t=text, c=Dpi.stringify(dpi_dict), b='\n', l='-'*10)
                 self.log_dpi(text, dpi_dict)

@@ -54,9 +54,6 @@ if __name__ == '__main__':
     parser.add_argument('--on_remote', action='store_true', required=False, help='Do not set this flag yourself!!')
     parser.add_argument('--num_packets', type=int, required=False, default=9999, help='number of packets to receive before abortion (optional)')
 
-    # args for actual functionality
-    # TODO: more stuff?
-
     # other args
     parser.add_argument('--debug', action='store_true', required=False, help='Activate debug messages')
 

@@ -180,7 +180,6 @@ if (
                         // there is no externally established udp allowed
                         drop();
                         return;
-                        //TODO: port whitelist for udp!
                     }
 
                     // flow is known
@@ -232,9 +231,6 @@ if (
 
                     //SYN COOKIES for SYN-DEFENSE
                     if(hdr.tcp.syn == 1){
-                        //TODO:Debugging: test clone to check number
-                        //TODO:clone3(CloneType.I2E, 100, meta);
-
                         // Perform handshake with client
                         set_cookie_in_ack_number();
                         swaps_to_reply();
